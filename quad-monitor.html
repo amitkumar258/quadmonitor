@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What is the Quad up to?</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Georgia','Times New Roman',serif;background:#d6eaf8;color:#1a2332;overflow:hidden;height:100vh;width:100vw;}
+/* ===== PERSISTENT SITE HEADER ===== */
+#site-header{position:fixed;top:0;left:0;width:100%;height:96px;background:#154360;z-index:1100;display:flex;align-items:center;justify-content:space-between;padding:0 50px;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+#header-brand{display:flex;flex-direction:column;gap:3px;}
+#header-title{font-family:'Georgia','Times New Roman',serif;font-size:2.3rem;font-weight:700;color:#fff;letter-spacing:-.3px;line-height:1.1;}
+#header-subtitle{font-family:'Georgia','Times New Roman',serif;font-size:1.15rem;color:#85c1e9;font-style:italic;}
+#header-nav{display:flex;align-items:center;gap:4px;}
+.nav-link{font-family:'Georgia','Times New Roman',serif;font-size:1.0rem;color:#d6eaf8;padding:8px 14px;border-radius:7px;cursor:pointer;transition:background .2s,color .2s;text-decoration:none;white-space:nowrap;border:none;background:none;}
+.nav-link:hover{background:rgba(255,255,255,.15);color:#fff;}
+.nav-link.active{background:rgba(255,255,255,.22);color:#fff;font-weight:700;}
+/* Slides start below the header, offset managed by JS syncLayout() for robustness */
+#slider-container{position:relative;width:100vw;height:calc(100vh - 96px);margin-top:96px;overflow:hidden;}
+.slide{position:absolute;top:0;left:0;width:100vw;height:calc(100vh - 96px);background:#d6eaf8;display:flex;flex-direction:column;opacity:0;transform:translateX(100%);transition:opacity .45s ease,transform .45s ease;pointer-events:none;overflow-y:auto;}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}
+.slide.prev{opacity:0;transform:translateX(-100%);}
+.nav-arrow{position:fixed;top:50%;transform:translateY(-50%);background:rgba(21,67,96,.85);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:20px;cursor:pointer;z-index:1000;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(0,0,0,.3);transition:background .2s,transform .2s;}
+.nav-arrow:hover{background:rgba(21,67,96,1);transform:translateY(-50%) scale(1.1);}
+.nav-arrow:disabled{opacity:.2;cursor:default;}
+.nav-arrow:disabled:hover{transform:translateY(-50%) scale(1);background:rgba(21,67,96,.85);}
+#prev-btn{left:16px;}#next-btn{right:16px;}
+#slide-indicators{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:1000;}
+.indicator{width:10px;height:10px;border-radius:50%;background:rgba(21,67,96,.3);cursor:pointer;transition:background .2s,transform .2s;}
+.indicator.active{background:#154360;transform:scale(1.3);}
+.slide-inner{max-width:1200px;margin:0 auto;padding:38px 60px 75px;width:100%;}
+.slide-title{font-size:2.4rem;font-weight:700;color:#154360;text-align:center;margin-bottom:28px;letter-spacing:-.5px;}
+.slide-subtitle{font-size:1.05rem;color:#2e6e9e;text-align:center;margin-bottom:22px;}
+.home-header{text-align:center;margin-bottom:28px;}
+.home-header h1{font-size:3rem;font-weight:700;color:#154360;line-height:1.1;letter-spacing:-1px;}
+.home-header p.tagline{font-size:1.1rem;color:#2e6e9e;margin-top:8px;font-style:italic;}
+.home-divider{width:80px;height:4px;background:#154360;margin:16px auto;border-radius:2px;}
+.about-text{font-size:.96rem;line-height:1.8;color:#1a2332;background:rgba(255,255,255,.55);border-radius:12px;padding:28px 32px;box-shadow:0 2px 12px rgba(21,67,96,.07);}
+.about-text p{margin-bottom:15px;text-align:justify;}
+.about-text p:last-child{margin-bottom:0;}
+.filters-bar{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap;align-items:flex-end;}
+.filters-bar label{font-size:.82rem;font-weight:600;color:#154360;display:flex;flex-direction:column;gap:4px;}
+.filters-bar select{padding:6px 10px;border:1.5px solid #85c1e9;border-radius:6px;background:#fff;color:#1a2332;font-size:.85rem;cursor:pointer;min-width:150px;}
+.filters-bar select:focus{outline:none;border-color:#154360;}
+.filter-reset{padding:7px 13px;background:#154360;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;transition:background .2s;}
+.filter-reset:hover{background:#0e2d44;}
+.table-count{font-size:.8rem;color:#5d6d7e;margin-bottom:7px;}
+.initiatives-table-wrap{overflow-x:auto;border-radius:10px;box-shadow:0 2px 12px rgba(21,67,96,.1);}
+table.init-table{width:100%;border-collapse:collapse;background:#fff;font-size:.86rem;table-layout:fixed;}
+table.init-table thead tr{background:#154360;color:#fff;}
+table.init-table th{padding:11px 13px;text-align:left;font-weight:600;white-space:nowrap;font-size:.82rem;}
+table.init-table tbody tr{border-bottom:1px solid #e8f4f8;transition:background .15s;cursor:pointer;}
+table.init-table tbody tr:hover{background:#eaf4fc;}
+table.init-table td{padding:10px 13px;vertical-align:top;line-height:1.45;}
+/* Initiatives slide: use full width so all 9 columns fit without horizontal scroll */
+#s0 .slide-inner{max-width:1700px;padding-left:28px;padding-right:28px;}
+#s0 table.init-table{font-size:.8rem;}
+#s0 table.init-table th{padding:10px 8px;font-size:.76rem;}
+#s0 table.init-table td{padding:8px 8px;font-size:.77rem;word-break:break-word;}
+/* Column width allocation (8 cols): #, Initiative, Year, Summit, Domain, Type, Scope, Performance */
+#s0 table.init-table th:nth-child(1),#s0 table.init-table td:nth-child(1){width:3%;}
+#s0 table.init-table th:nth-child(2),#s0 table.init-table td:nth-child(2){width:22%;}
+#s0 table.init-table th:nth-child(3),#s0 table.init-table td:nth-child(3){width:7%;}
+#s0 table.init-table th:nth-child(4),#s0 table.init-table td:nth-child(4){width:16%;}
+#s0 table.init-table th:nth-child(5),#s0 table.init-table td:nth-child(5){width:13%;}
+#s0 table.init-table th:nth-child(6),#s0 table.init-table td:nth-child(6){width:13%;}
+#s0 table.init-table th:nth-child(7),#s0 table.init-table td:nth-child(7){width:12%;}
+#s0 table.init-table th:nth-child(8),#s0 table.init-table td:nth-child(8){width:14%;}
+#s0 table.init-table th{white-space:normal;}
+#s0 .good-intra,#s0 .good-extra{white-space:normal;font-size:.68rem;padding:2px 6px;}
+#s0 .perf-badge,#s0 .status-badge{white-space:normal;}
+.perf-badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:.76rem;font-weight:600;white-space:nowrap;}
+.perf-satisfactory{background:#d5f5e3;color:#1e8449;}
+.perf-mixed{background:#fef9e7;color:#9a7d0a;}
+.perf-unsatisfactory{background:#fadbd8;color:#a93226;}
+.status-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.73rem;font-weight:600;}
+.status-active{background:#d5f5e3;color:#1e8449;}
+.status-inactive{background:#f2f3f4;color:#717d7e;}
+#modal-overlay{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,25,47,.62);z-index:2000;align-items:center;justify-content:center;}
+#modal-overlay.open{display:flex;}
+#modal-box{background:#f4f9fd;border-radius:14px;width:92vw;max-width:1120px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);position:relative;padding:34px 38px;}
+#modal-close{position:absolute;top:13px;right:16px;background:none;border:none;font-size:1.55rem;cursor:pointer;color:#154360;line-height:1;}
+#modal-close:hover{color:#a93226;}
+#modal-title{font-size:1.4rem;font-weight:700;color:#154360;margin-bottom:6px;padding-right:28px;}
+#modal-meta{font-size:.81rem;color:#5d6d7e;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px;}
+#modal-meta span{background:#d6eaf8;padding:3px 9px;border-radius:10px;}
+.modal-columns{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.modal-col{background:#fff;border-radius:10px;padding:20px 22px;box-shadow:0 1px 6px rgba(21,67,96,.07);}
+.modal-col h3{font-size:.97rem;font-weight:700;color:#154360;margin-bottom:13px;padding-bottom:9px;border-bottom:2px solid #85c1e9;}
+.modal-col .col-right-header{border-bottom-color:#58d68d;color:#1e8449;}
+.modal-col p{font-size:.87rem;line-height:1.75;color:#2c3e50;margin-bottom:10px;}
+.modal-col p:last-child{margin-bottom:0;}
+.chart-slide-inner{display:flex;flex-direction:column;height:auto;min-height:calc(100vh - 96px);padding:16px 60px 75px;max-width:1200px;margin:0 auto;width:100%;overflow:visible;}
+.chart-container{flex:none;height:380px;position:relative;background:#fff;border-radius:14px;padding:22px 28px;box-shadow:0 2px 16px rgba(21,67,96,.1);overflow:hidden;}
+.chart-takeaway{margin-top:12px;padding:11px 18px;background:rgba(21,67,96,.08);border-left:4px solid #154360;border-radius:6px;font-size:.84rem;line-height:1.62;color:#154360;flex-shrink:0;}
+.chart-takeaway strong{display:block;margin-bottom:2px;font-size:.87rem;}
+/* Cooperation page: matched-initiative list */
+.coop-list-wrap{margin-top:14px;flex-shrink:0;}
+.coop-list-title{font-size:.9rem;font-weight:700;color:#154360;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #85c1e9;}
+#coop-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;}
+.coop-item{background:#fff;border-radius:9px;padding:11px 14px;box-shadow:0 1px 6px rgba(21,67,96,.08);cursor:pointer;transition:background .15s,transform .12s;border-left:4px solid #85c1e9;display:flex;flex-direction:column;}
+.coop-item:hover{background:#eaf4fc;transform:translateY(-1px);}
+/* Fixed-height rows so side-by-side bubbles align line-for-line */
+.coop-item .ci-name{font-size:.84rem;font-weight:700;color:#154360;line-height:1.2;height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px;}
+.coop-item .ci-line{font-size:.74rem;color:#5d6d7e;line-height:1.35;height:1.35em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;}
+.coop-item .ci-year{color:#2c3e50;font-weight:600;}
+.coop-item .ci-tag{display:inline-block;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#85c1e9;margin-right:3px;}
+.coop-item .ci-badges{height:auto;min-height:1.6em;white-space:normal;display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;}
+@media(max-width:768px){#coop-list{grid-template-columns:1fr;}}
+/* Spacer below takeaway — physical flex item so browsers always respect it */
+.chart-foot{height:80px;flex-shrink:0;}
+.chart-takeaway strong{display:block;margin-bottom:3px;font-size:.92rem;}
+/* Performance slide, column layout so chart gets full width and proper height */
+.perf-layout{display:flex;flex-direction:column;gap:14px;}
+/* Chart area: full content width, generous fixed height for a large canvas */
+.perf-chart-area{height:420px;background:#fff;border-radius:14px;padding:18px 22px;box-shadow:0 2px 16px rgba(21,67,96,.1);display:flex;gap:22px;flex-shrink:0;}
+.perf-chart-canvas-section{flex:1;display:flex;flex-direction:column;min-width:0;}
+.perf-chart-title{font-size:.93rem;font-weight:700;color:#154360;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #85c1e9;flex-shrink:0;}
+.perf-chart-canvas-section .canvas-wrap{flex:1;position:relative;min-height:0;}
+/* Legend: vertical column on right side of chart */
+#perf-legend{flex:0 0 190px;display:flex;flex-direction:column;justify-content:center;gap:10px;border-left:1px solid #eaf4fc;padding-left:22px;flex-shrink:0;}
+.perf-leg-item{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:.9rem;color:#2c3e50;}
+.perf-leg-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+/* Three-column outcome lists, fixed height below the chart */
+.perf-lists-wrap{display:flex;gap:12px;height:260px;}
+.perf-col{flex:1;background:#fff;border-radius:12px;padding:14px 12px 10px;box-shadow:0 2px 12px rgba(21,67,96,.08);display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.perf-col-hdr{font-size:.86rem;font-weight:700;padding-bottom:7px;border-bottom-width:2px;border-bottom-style:solid;margin-bottom:8px;flex-shrink:0;}
+.perf-col-sat{color:#1e8449;border-bottom-color:#1e8449;}
+.perf-col-mix{color:#9a7d0a;border-bottom-color:#d4ac0d;}
+.perf-col-unsat{color:#a93226;border-bottom-color:#a93226;}
+.perf-col-list{overflow-y:auto;flex:1;}
+.perf-item{display:flex;align-items:flex-start;gap:7px;padding:5px 4px;border-bottom:1px solid #eaf4fc;font-size:.82rem;color:#2c3e50;line-height:1.4;cursor:pointer;transition:background .12s;border-radius:3px;}
+.perf-item:hover{background:#eaf4fc;}
+.perf-item:last-child{border-bottom:none;}
+/* Chart slides scroll when content exceeds viewport */
+#s1 .chart-slide-inner,#s2 .chart-slide-inner{height:auto;min-height:calc(100vh - 96px);overflow:visible;}
+@supports(height:100svh){#s1 .chart-slide-inner,#s2 .chart-slide-inner{min-height:calc(100svh - 96px);}}
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px;}
+.analysis-card{background:#fff;border-radius:12px;padding:20px 22px;box-shadow:0 2px 12px rgba(21,67,96,.08);}
+.analysis-card h3{font-size:.97rem;font-weight:700;color:#154360;margin-bottom:11px;padding-bottom:7px;border-bottom:2px solid #85c1e9;}
+.analysis-card ul{list-style:none;padding:0;}
+.analysis-card li{padding:5px 0 5px 16px;position:relative;font-size:.85rem;line-height:1.62;color:#2c3e50;border-bottom:1px solid #eaf4fc;}
+.analysis-card li:last-child{border-bottom:none;}
+.analysis-card li::before{content:"▸";position:absolute;left:0;color:#5dade2;font-size:.78rem;top:7px;}
+.analysis-conclusion{grid-column:1/-1;background:#154360;color:#fff;border-radius:12px;padding:20px 24px;}
+.analysis-conclusion h3{font-size:1rem;font-weight:700;margin-bottom:11px;color:#85c1e9;}
+.analysis-conclusion ul{list-style:none;padding:0;}
+.analysis-conclusion li{padding:5px 0 5px 16px;position:relative;font-size:.86rem;line-height:1.62;border-bottom:1px solid rgba(255,255,255,.1);}
+.analysis-conclusion li:last-child{border-bottom:none;}
+.analysis-conclusion li::before{content:"◆";position:absolute;left:0;color:#85c1e9;font-size:.68rem;top:8px;}
+
+/* ===== MOBILE RESPONSIVE ===== */
+/* Viewport height fix: use svh (excludes browser chrome) on modern browsers */
+@supports(height:100svh){
+  #slider-container{height:calc(100svh - 96px);}
+  .slide{height:calc(100svh - 96px);}
+}
+
+@media(max-width:768px){
+  .chart-slide-inner{height:auto;min-height:calc(100vh - 96px);padding:18px 16px 75px;max-width:100%;overflow:visible;}
+  @supports(height:100svh){.chart-slide-inner{min-height:calc(100svh - 96px);}}
+  /* Header on mobile: two-row stack (brand / nav), nav scrolls horizontally */
+  #site-header{height:auto;padding:8px 12px 6px;flex-direction:column;align-items:flex-start;gap:5px;}
+  #header-title{font-size:1.1rem;}
+  #header-subtitle{font-size:.72rem;}
+  #header-nav{overflow-x:auto;width:100%;flex-wrap:nowrap;gap:2px;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+  #header-nav::-webkit-scrollbar{height:2px;background:transparent;}
+  .nav-link{font-size:.78rem;padding:5px 10px;white-space:nowrap;}
+
+  /* Slide inner padding, lose the 80px side gutters */
+  .slide-inner{padding:18px 16px 65px;max-width:100%;}
+
+  /* Enable smooth scrolling inside slides on iOS */
+  .slide{-webkit-overflow-scrolling:touch;}
+
+  /* Typography scale-down */
+  .home-header h1{font-size:2rem;letter-spacing:-.2px;}
+  .home-header p.tagline{font-size:.92rem;}
+  .about-text{font-size:.87rem;padding:16px 14px;line-height:1.7;}
+  .slide-title{font-size:1.55rem;margin-bottom:16px;}
+  .slide-subtitle{font-size:.93rem;}
+  .chart-takeaway{font-size:.82rem;padding:11px 14px;margin-top:10px;}
+
+  /* Smaller nav arrows */
+  .nav-arrow{width:38px;height:38px;font-size:15px;}
+  #prev-btn{left:6px;}
+  #next-btn{right:6px;}
+
+  /* Filters, stack vertically */
+  .filters-bar{flex-direction:column;gap:8px;}
+  .filters-bar label{width:100%;}
+  .filters-bar select{width:100%;min-width:unset;}
+  .filter-reset{width:100%;text-align:center;}
+
+  /* Chart containers, fixed height instead of flex:1 */
+  .chart-container{flex:none;height:320px;}
+  #cc-domains{height:340px;}
+  #cc-types{height:440px;}
+  .coop-cross{flex-direction:column;}
+  .coop-cross-chart{height:280px;}
+  .cooplx-body{flex-direction:column;}
+  .cooplx-body>.cooplx-sidebar{position:static;flex:none;width:100%;margin-top:0;top:auto;}
+
+  /* Perf slide, canvas takes full width, legend stacks below as a row */
+  .perf-chart-area{flex-direction:column;height:auto;gap:12px;}
+  .perf-chart-canvas-section .canvas-wrap{height:280px;flex:none;position:relative;}
+  #perf-legend{flex:none;border-left:none;padding-left:0;border-top:1px solid #eaf4fc;padding-top:10px;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:6px 18px;}
+  #perf-legend .perf-leg-item{font-size:.78rem;gap:6px;}
+  .perf-lists-wrap{flex-direction:column;height:auto;gap:10px;}
+  .perf-col{flex:none;max-height:210px;}
+
+  /* Analysis grid, single column */
+  .analysis-grid{grid-template-columns:1fr;margin-top:6px;gap:12px;}
+  .analysis-conclusion{grid-column:1;}
+
+  /* Modal, full width, single column */
+  #modal-box{padding:20px 14px;width:96vw;max-height:88vh;}
+  #modal-title{font-size:1.1rem;}
+  .modal-columns{grid-template-columns:1fr;}
+  #modal-meta{gap:5px;}
+  .modal-col{padding:14px 14px;}
+
+  /* Table, slightly tighter */
+  table.init-table th,table.init-table td{padding:8px 8px;}
+  table.init-table{font-size:.79rem;}
+  /* On mobile, let the table stay wider than the screen and scroll horizontally,
+     with cells wrapping over two lines so columns have room and never overlap */
+  #s0 .slide-inner{max-width:100%;padding-left:8px;padding-right:8px;}
+  #s0 table.init-table{table-layout:auto;width:auto;min-width:720px;font-size:.72rem;}
+  #s0 table.init-table th,#s0 table.init-table td{white-space:normal;word-break:break-word;padding:7px 7px;vertical-align:top;line-height:1.3;width:auto;}
+  #s0 table.init-table th{font-size:.66rem;}
+  #s0 .good-intra,#s0 .good-extra{white-space:nowrap;font-size:.62rem;padding:2px 6px;}
+  #s0 .stars .star{font-size:.72rem;}
+}
+
+/* Extra-small phones */
+@media(max-width:480px){
+  .home-header h1{font-size:1.65rem;}
+  .slide-title{font-size:1.25rem;}
+  .about-text{font-size:.84rem;}
+  #cc-types{height:480px;}
+  .perf-chart-canvas-section .canvas-wrap{height:240px;}
+  .perf-col{max-height:180px;}
+}
+
+.chart-filter-bar{display:flex;gap:12px;align-items:flex-end;flex-shrink:0;margin-bottom:0;}
+.chart-filter-bar label{font-size:.82rem;font-weight:600;color:#154360;display:flex;flex-direction:column;gap:3px;}
+.chart-filter-bar select{padding:5px 10px;border:1.5px solid #85c1e9;border-radius:6px;background:#fff;color:#1a2332;font-size:.83rem;cursor:pointer;min-width:220px;}
+.chart-filter-bar select:focus{outline:none;border-color:#154360;}
+.chart-drill{background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 2px 10px rgba(21,67,96,.08);flex-shrink:0;max-height:140px;overflow-y:auto;margin-bottom:0;}
+.drill-title{font-size:.8rem;font-weight:700;color:#154360;margin-bottom:6px;padding-bottom:5px;border-bottom:2px solid #85c1e9;}
+.drill-item{font-size:.8rem;color:#2c3e50;padding:4px 2px;border-bottom:1px solid #eaf4fc;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .12s;border-radius:3px;}
+.drill-item:hover{background:#eaf4fc;}
+.drill-item:last-child{border-bottom:none;}
+.drill-year{font-size:.73rem;color:#85c1e9;flex-shrink:0;}
+.modal-sources{margin-top:12px;padding-top:10px;border-top:1px dashed #d6eaf8;}
+.src-title{font-size:.7rem;font-weight:700;color:#5d6d7e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.src-item{font-size:.74rem;line-height:1.55;color:#5d6d7e;margin-bottom:3px;padding-left:10px;position:relative;}
+.src-item::before{content:"›";position:absolute;left:0;color:#85c1e9;}
+.src-item a{color:#2e6e9e;text-decoration:none;}
+.src-item a:hover{text-decoration:underline;color:#154360;}
+.src-item.secondary{color:#e67e22;font-style:italic;}
+.src-item.secondary a{color:#e67e22;}
+@media(max-width:768px){
+  .chart-filter-bar{flex-direction:column;gap:6px;}
+  .chart-filter-bar select{min-width:unset;width:100%;}
+  .chart-drill{max-height:120px;}
+}
+
+/* ===== FINANCE SLIDE ===== */
+.fin-charts-row{display:flex;gap:20px;margin-bottom:14px;flex-shrink:0;}
+.fin-chart-wrap{flex:1;background:#fff;border-radius:14px;padding:16px 20px;box-shadow:0 2px 16px rgba(21,67,96,.1);min-width:0;}
+.fin-chart-title{font-size:.88rem;font-weight:700;color:#154360;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #85c1e9;}
+.fin-chart-canvas{height:200px;position:relative;}
+.fin-disclaimer{margin-bottom:14px;padding:11px 16px;background:rgba(21,67,96,.07);border-left:4px solid #85c1e9;border-radius:6px;font-size:.8rem;color:#5d6d7e;line-height:1.6;flex-shrink:0;}
+.fin-disclaimer strong{color:#154360;display:block;margin-bottom:3px;font-size:.82rem;}
+.fin-table-wrap{overflow-x:auto;border-radius:10px;box-shadow:0 2px 12px rgba(21,67,96,.1);flex-shrink:0;}
+table.fin-table{width:100%;border-collapse:collapse;background:#fff;font-size:.8rem;}
+table.fin-table thead tr{background:#154360;color:#fff;}
+table.fin-table th{padding:9px 12px;text-align:left;font-weight:600;white-space:nowrap;font-size:.76rem;}
+table.fin-table tbody tr{border-bottom:1px solid #e8f4f8;transition:background .15s;}
+table.fin-table tbody tr:hover{background:#eaf4fc;}
+table.fin-table tbody tr.fin-src-row{cursor:pointer;}
+table.fin-table tbody tr.fin-src-row:hover td:first-child::after{content:' \2197';font-size:.65rem;color:#2e6e9e;vertical-align:super;}
+
+table.fin-table td{padding:8px 12px;vertical-align:top;line-height:1.4;font-size:.79rem;}
+.fin-amt{font-weight:700;color:#154360;white-space:nowrap;}
+.fin-loan{color:#7d6608;}
+.fin-na{color:#aab3be;font-style:italic;}
+.fin-partial{color:#1e8449;}
+.fin-type-grant{display:inline-block;padding:2px 7px;border-radius:8px;font-size:.7rem;font-weight:600;background:#d5f5e3;color:#1e8449;}
+.fin-type-loan{display:inline-block;padding:2px 7px;border-radius:8px;font-size:.7rem;font-weight:600;background:#fef3cd;color:#7d6608;}
+.fin-type-ta{display:inline-block;padding:2px 7px;border-radius:8px;font-size:.7rem;font-weight:600;background:#d6eaf8;color:#154360;}
+.fin-type-pledge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:.7rem;font-weight:600;background:#f3e5f5;color:#6a1b9a;}
+.fin-type-aid{display:inline-block;padding:2px 7px;border-radius:8px;font-size:.7rem;font-weight:600;background:#e3f2fd;color:#1565c0;}
+.fin-clarify{margin-top:10px;font-size:.78rem;color:#5d6d7e;line-height:1.55;}
+.fin-clarify b{color:#154360;}
+#fin-modal-overlay{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(10,25,47,.62);z-index:2100;align-items:center;justify-content:center;}
+#fin-modal-overlay.open{display:flex;}
+#fin-modal-box{background:#f4f9fd;border-radius:14px;width:92vw;max-width:620px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);position:relative;padding:30px 32px;}
+#fin-modal-close{position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.55rem;cursor:pointer;color:#154360;line-height:1;}
+#fin-modal-close:hover{color:#a93226;}
+#fin-modal-title{font-size:1.25rem;font-weight:700;color:#154360;margin-bottom:8px;padding-right:28px;}
+#fin-modal-amt{display:inline-block;font-size:.82rem;font-weight:600;color:#154360;background:#d6eaf8;padding:4px 11px;border-radius:10px;margin-bottom:14px;}
+#fin-modal-body p{font-size:.92rem;line-height:1.7;color:#2c3e50;}
+#fin-modal-box .modal-sources{margin-top:16px;}
+@media(max-width:768px){#fin-modal-box{padding:22px 18px;}}
+@media(max-width:768px){
+  .fin-charts-row{flex-direction:column;}
+  .fin-chart-canvas{height:180px;}
+  table.fin-table th,table.fin-table td{padding:6px 8px;}
+}
+
+
+.good-intra{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.71rem;font-weight:600;background:#e8eaf6;color:#3949ab;white-space:nowrap;}
+.good-extra{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.71rem;font-weight:600;background:#e0f2f1;color:#00695c;white-space:nowrap;}
+
+
+/* ===== COOPERATION LANDSCAPE (merged) ===== */
+.cooplx-intro{font-size:.92rem;line-height:1.65;color:#1a2332;background:rgba(255,255,255,.6);border-radius:10px;padding:14px 18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(21,67,96,.06);}
+.cooplx-intro b{color:#154360;}
+.cooplx-body{display:flex;gap:18px;align-items:flex-start;}
+.cooplx-sidebar{flex:0 0 235px;position:sticky;top:8px;margin-top:44px;background:#fff;border-radius:12px;padding:16px 16px 14px;box-shadow:0 2px 14px rgba(21,67,96,.12);}
+.cooplx-side-title{font-size:.92rem;font-weight:700;color:#154360;margin-bottom:6px;padding-bottom:7px;border-bottom:2px solid #85c1e9;}
+.cooplx-sidebar label{display:block;font-size:.8rem;font-weight:600;color:#154360;margin-top:12px;margin-bottom:4px;}
+.cooplx-sidebar select{width:100%;padding:7px 9px;border:1.5px solid #85c1e9;border-radius:6px;background:#fff;color:#1a2332;font-size:.83rem;cursor:pointer;}
+.cooplx-sidebar select:focus{outline:none;border-color:#154360;}
+.cooplx-side-hint{font-size:.74rem;color:#5d6d7e;line-height:1.5;margin-top:12px;}
+.cooplx-reset{margin-top:12px;width:100%;padding:8px 12px;background:#154360;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;font-family:inherit;transition:background .2s;}
+.cooplx-reset:hover{background:#0e2d44;}
+.cooplx-main{flex:1;min-width:0;}
+.coop-cross{display:flex;gap:16px;align-items:flex-start;margin-bottom:6px;}
+.coop-cross-chart{flex:2;min-width:0;background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 2px 14px rgba(21,67,96,.1);height:320px;position:relative;}
+.coop-cross-note{flex:1;min-width:0;margin-top:0;}
+.coop-note-p{margin:0;line-height:1.62;}
+.coop-note-body{margin-top:4px;line-height:1.62;}
+.coop-note-list{list-style:none;padding:0;margin:6px 0 0;}
+.coop-note-list li{position:relative;padding:5px 0 5px 18px;line-height:1.5;border-bottom:1px solid rgba(21,67,96,.08);}
+.coop-note-list li:last-child{border-bottom:none;}
+.coop-note-list li::before{content:"\25B8";position:absolute;left:2px;color:#5dade2;top:7px;font-size:.78rem;}
+.cooplx-section{margin-top:20px;}
+.cooplx-h{font-size:1.15rem;font-weight:700;color:#154360;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #85c1e9;}
+.ci-meta2{margin-top:5px;}
+
+.intro-compact{max-width:1080px;margin:0 auto 22px;}
+
+/* Embedded chart notes */
+.chart-container{display:flex;flex-direction:column;}
+.cc-canvas{flex:1;position:relative;min-height:0;}
+.cc-note{flex-shrink:0;font-size:.71rem;color:#7a8a99;text-align:center;line-height:1.4;padding-top:6px;margin-top:6px;border-top:1px solid #eef3f7;}
+/* Finance *Note block */
+.fin-note{margin-top:6px;margin-bottom:26px;background:rgba(21,67,96,.05);border-radius:8px;padding:12px 16px;}
+.fin-note-head{font-size:.8rem;font-weight:700;color:#154360;margin-bottom:6px;}
+.fin-note ul{list-style:none;padding:0;margin:0;}
+.fin-note li{font-size:.78rem;color:#5d6d7e;line-height:1.55;padding-left:14px;position:relative;margin-bottom:6px;}
+.fin-note li:last-child{margin-bottom:0;}
+.fin-note li::before{content:"\2022";position:absolute;left:0;color:#85c1e9;font-weight:700;}
+.fin-note b{color:#154360;}
+
+.init-search-wrap{margin-left:auto;display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #85c1e9;border-radius:7px;padding:5px 10px;}
+.init-search-wrap .search-ico{font-size:.85rem;opacity:.7;}
+.init-search-wrap input{border:none;outline:none;font-family:inherit;font-size:.85rem;color:#1a2332;min-width:170px;background:transparent;}
+@media(max-width:768px){.init-search-wrap{margin-left:0;width:100%;}.init-search-wrap input{width:100%;}}
+.su-intro{text-align:center;font-size:1.05rem;color:#2e6e9e;margin-bottom:14px;font-style:italic;}
+.su-form{max-width:640px;margin:0 auto;background:#fff;border-radius:12px;padding:26px 28px;box-shadow:0 2px 14px rgba(21,67,96,.1);}
+.su-form label{display:block;font-size:.85rem;font-weight:600;color:#154360;margin:14px 0 5px;}
+.su-form input,.su-form select,.su-form textarea{width:100%;padding:9px 11px;border:1.5px solid #85c1e9;border-radius:7px;font-size:.9rem;font-family:inherit;color:#1a2332;box-sizing:border-box;}
+.su-form textarea{min-height:120px;resize:vertical;}
+.su-form input:focus,.su-form select:focus,.su-form textarea:focus{outline:none;border-color:#154360;}
+.su-submit{margin-top:18px;width:100%;padding:11px;background:#154360;color:#fff;border:none;border-radius:7px;font-size:.95rem;font-weight:600;cursor:pointer;font-family:inherit;transition:background .2s;}
+.su-submit:hover{background:#0e2d44;}
+.su-note{text-align:center;font-size:.78rem;color:#5d6d7e;margin-top:14px;line-height:1.5;}
+.stars{white-space:nowrap;}
+.stars .star{color:#d8e0e6;font-size:.92rem;letter-spacing:1px;}
+.stars .star.on{color:#f0a830;}
+.kv-list{list-style:none;padding:0;margin:0;}
+.kv-list li{position:relative;padding:6px 0 6px 20px;font-size:.88rem;line-height:1.5;color:#2c3e50;border-bottom:1px solid #eef3f7;}
+.kv-list li:last-child{border-bottom:none;}
+.kv-list li::before{content:"\25B8";position:absolute;left:2px;color:#5dade2;font-size:.78rem;top:8px;}
+.kv-list li.kv-none{color:#a93226;}
+.kv-list li.kv-none::before{content:"\2715";color:#a93226;font-size:.72rem;}
+.kv-list li.kv-secondary{color:#7b2d8e;}
+.kv-list li.kv-secondary::before{content:"\25B8";color:#7b2d8e;}
+.kv-fin{margin-top:14px;padding:11px 13px;background:#eef6fb;border-radius:8px;font-size:.85rem;color:#154360;line-height:1.5;}
+.kv-fin-none{background:#f4f6f8;color:#5d6d7e;}
+.kv-fin b{color:#154360;}
+.src-item.secondary,.src-item.secondary a{color:#7b2d8e;}
+.tk-block{margin-top:16px;background:rgba(21,67,96,.05);border-left:4px solid #154360;border-radius:8px;padding:14px 18px;}
+.tk-head{font-size:1rem;font-weight:700;color:#154360;margin-bottom:8px;}
+.tk-list{list-style:none;padding:0;margin:0;}
+.tk-list li{position:relative;padding:5px 0 5px 18px;font-size:.86rem;line-height:1.55;color:#2c3e50;border-bottom:1px solid rgba(21,67,96,.08);}
+.tk-list li:last-child{border-bottom:none;}
+.tk-list li::before{content:"\25C6";position:absolute;left:0;color:#5dade2;font-size:.66rem;top:8px;}
+.rating-disclaimer{max-width:1080px;margin:16px auto 0;font-size:.8rem;color:#5d6d7e;line-height:1.55;font-style:italic;text-align:center;}
+</style>
+</head>
+<body>
+<header id="site-header">
+  <div id="header-brand" onclick="go(0)" style="cursor:pointer;">
+    <div id="header-title">Quad Monitor</div>
+    <div id="header-subtitle">What is the Quad up to?</div>
+  </div>
+  <nav id="header-nav">
+    <button class="nav-link" data-slide="0" onclick="go(0)">Initiatives</button>
+    <button class="nav-link" data-slide="1" onclick="go(1)">Cooperation Landscape</button>
+    <button class="nav-link" data-slide="2" onclick="go(2)">Finances</button>
+    <button class="nav-link" data-slide="3" onclick="go(3)">Submit an Update</button>
+  </nav>
+</header>
+<div id="slider-container">
+
+<!-- SLIDE 1: INITIATIVES (Home intro merged in) -->
+<div class="slide active" id="s0">
+  <div class="slide-inner">
+    <div class="home-header">
+      <p class="tagline">Tracking the initiatives, investments, and impact of the Quad</p>
+      <div class="home-divider"></div>
+    </div>
+    <div class="about-text intro-compact">
+      <p>The Quad is often criticised for being dormant, even declared dead, for lapsing into summitry, and for drifting toward soft, non-security issues. Sceptics argue it has done too little to mount a credible challenge or alternative to China, falling short of the objectives it was founded to pursue.</p>
+      <p>This dashboard is an attempt to cut through that debate using empirical data. It maps every Quad initiative across six summit cycles, tracking where the grouping cooperates, what forms that cooperation takes, how much capital is committed and how little is verifiably disbursed, and how each initiative has performed against its stated goals. Every figure is drawn from official government sources.</p>
+    </div>
+    <div class="filters-bar" style="margin-top:34px;">
+      <label>Sort &amp; Filter by
+        <select id="f-primary" onchange="updateSecondaryFilter()">
+          <option value="">All Initiatives</option>
+          <option value="year">Year</option>
+          <option value="domain">Domain</option>
+          <option value="type">Type of Cooperation</option>
+          <option value="stars">Rating</option>
+          <option value="good">Scope</option>
+        </select>
+      </label>
+      <label id="f-secondary-label" style="display:none">
+        <select id="f-secondary" onchange="filterTable()">
+          <option value="">All</option>
+        </select>
+      </label>
+      <button class="filter-reset" onclick="resetFilters()">Reset</button>
+      <div class="init-search-wrap">
+        <span class="search-ico">&#128269;</span>
+        <input id="init-search" type="text" placeholder="Search initiatives..." oninput="filterTable()">
+      </div>
+    </div>
+    <h2 class="slide-title" style="margin-top:18px;margin-bottom:6px;">Initiatives</h2>
+    <p class="table-count" id="tcount"></p>
+    <div class="initiatives-table-wrap">
+      <table class="init-table">
+        <thead><tr><th>#</th><th>Initiative</th><th>Year</th><th>Summit</th><th>Domain</th><th>Type</th><th>Scope</th><th>Rating</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="rating-disclaimer">A note on ratings: the one-to-five-star scores are indicative rather than definitive. Each reflects an assessment of the tangibles an initiative has delivered against its stated objectives, drawn from information available in the public domain, and is intended as a comparative guide rather than a final verdict.</p>
+  </div>
+</div>
+
+<!-- SLIDE 3: COOPERATION LANDSCAPE (merged) -->
+<div class="slide" id="s1">
+  <div class="chart-slide-inner">
+    <h2 class="slide-title">Cooperation Landscape</h2>
+    <div class="cooplx-intro">
+      This page maps the architecture of Quad cooperation and answers three questions. <b>Where</b> the Quad cooperates, across domains from maritime security to climate, health, and emerging technology. <b>What</b> forms that cooperation takes, from capacity building and interoperability to standard setting and supply chain resilience. <b>How</b> the two intersect, which you can explore using the dual filter on the left to cross-analyse any domain against any type of cooperation.
+    </div>
+    <div class="cooplx-body">
+      <aside class="cooplx-sidebar">
+        <h4 class="cooplx-side-title">Cross-Analysis Filter</h4>
+        <label>Domain of cooperation
+          <select id="coop-domain" onchange="renderCooperation()">
+            <option value="">All Domains</option>
+          </select>
+        </label>
+        <label>Type of cooperation
+          <select id="coop-type" onchange="renderCooperation()">
+            <option value="">All Types</option>
+          </select>
+        </label>
+        <p class="cooplx-side-hint">Pick any combination to see a tailored chart, a short analysis, and the matching initiatives. Reset to return to the overview.</p>
+        <button class="cooplx-reset" onclick="resetCoop()">Reset to overview</button>
+      </aside>
+      <div class="cooplx-main">
+        <div id="cooplx-results" style="display:none">
+          <div class="coop-cross">
+            <div class="coop-cross-chart"><canvas id="coop-chart"></canvas></div>
+            <div class="coop-cross-note chart-takeaway" id="coop-note"><strong>Analysis</strong></div>
+          </div>
+          <div class="coop-list-wrap">
+            <div class="coop-list-title" id="coop-list-title"></div>
+            <div id="coop-list"></div>
+          </div>
+        </div>
+       <div id="cooplx-landing">
+        <div class="cooplx-section">
+          <h3 class="cooplx-h">Cooperation by Domain</h3>
+          <div class="chart-container" id="cc-domains"><div class="cc-canvas"><canvas id="domains-chart"></canvas></div><div class="cc-note">Note: some initiatives span more than one domain and are counted in each.</div></div>
+          <div class="tk-block"><h4 class="tk-head">Strategic Portfolio and Scope</h4><ul class="tk-list"><li>Thirty-five initiatives across six summit cycles (2021 to 2026) mark a shift from a narrow maritime-security consultation to a broad programme spanning security, climate, infrastructure, health, and education.</li><li>Security leads with twenty initiatives across ten sub-domains, five in maritime and four in critical and emerging technology, confirming the Quad has dispersed rather than concentrated its hard-power ambitions.</li><li>Climate (8) is the most ambitious public-goods agenda, spanning green shipping, clean hydrogen, ocean research, climate information services, and supply-chain diversification.</li><li>Infrastructure (5) offers a credible alternative to coercive connectivity financing and includes the five-star Cable Connectivity programme.</li><li>Health (4) has produced the most measurable human-impact initiative, the Cancer Moonshot, while Education and Exchange (1) remains nascent but strategically significant.</li></ul></div>
+        </div>
+
+        <div class="cooplx-section">
+          <h3 class="cooplx-h">Cooperation by Type</h3>
+          <div class="chart-container" id="cc-types"><div class="cc-canvas"><canvas id="types-chart"></canvas></div><div class="cc-note">Note: many initiatives have more than one cooperation type.</div></div>
+          <div class="tk-block"><h4 class="tk-head">Cooperation Patterns</h4><ul class="tk-list"><li>Capacity Building dominates with sixteen instances, nearly half the portfolio, reflecting a preference for institution-building over binding commitments or joint enforcement.</li><li>Interoperability (13) is equally central, reflecting sustained investment in aligning the procedures, standards, and systems of four sovereign partners who share no formal alliance obligations.</li><li>Resilience (8) and Standard Setting (6) signal an ambition to shape the region's technical and regulatory architecture through influence rather than mandate.</li><li>Data Sharing (5) and Monitoring (5) prioritise shared situational awareness over collective enforcement.</li><li>Supply Chain Resilience (3) remains underdeveloped relative to its strategic urgency, given the Quad's semiconductor and critical-minerals exposure.</li></ul></div>
+        </div>
+       </div>
+      </div>
+    </div>
+    <div class="chart-foot"></div>
+  </div>
+</div>
+
+<!-- SLIDE 4: FINANCES -->
+<div class="slide" id="s2">
+  <div class="chart-slide-inner">
+    <h2 class="slide-title">Financial Commitments</h2>
+    <p class="slide-subtitle">What governments have disclosed — by initiative, domain, and country</p>
+
+    <div class="fin-disclaimer">
+      <strong>Methodology Note</strong>
+      All figures come from official government sources, including White House and US State Department fact sheets, Indian MEA, PIB and PMO releases, Australian DFAT and DCCEEW material, Japanese statements, and the US Development Finance Corporation. Commitments are recorded as announced, and disbursement figures appear only where a source confirms actual delivery. Other currencies are converted to approximate USD at the time of announcement. Click any row for a short summary and its sources. The charts show discrete commitments only and exclude loan facilities and large pledges, which stay in the table. The one non-government figure, the 10 million dollar STEM Fellowship pool, comes from a private foundation and is flagged as such. Many initiatives carry no disclosed budget at all.
+    </div>
+
+    <div class="fin-disclaimer" style="border-left-color:#e67e22;background:rgba(230,126,34,.07);">
+      <strong style="color:#b9540e;">Important Caveats</strong>
+      First, the disaster relief responses for Myanmar, Papua New Guinea, and Vietnam are one-off deployments under the Humanitarian Assistance and Disaster Relief Mechanism rather than standing initiatives. They appear here as funding commitments and not as separate entries on the Initiatives page. Second, several headline figures, including the COVAX, Last-Mile, Cancer Moonshot, and Quality Infrastructure numbers, are cumulative or aspirational pledges that bundle government and private money rather than appropriated grant spending. Third, government sources rarely publish disbursement data, so a committed figure should not be read as money that has already been spent.
+    </div>
+
+    <div class="fin-charts-row">
+      <div class="fin-chart-wrap">
+        <div class="fin-chart-title">Discrete Commitment by Domain (USD millions)</div>
+        <div class="fin-chart-canvas"><canvas id="fin-domain-chart"></canvas></div>
+        <div class="cc-note">Note: domains are not mutually exclusive. Loans and pledges are excluded.</div>
+      </div>
+      <div class="fin-chart-wrap">
+        <div class="fin-chart-title">Discrete Commitment by Member (USD millions)</div>
+        <div class="fin-chart-canvas"><canvas id="fin-country-chart"></canvas></div>
+        <div class="cc-note">Note: loans and pledges are excluded from this chart.</div>
+      </div>
+    </div>
+    <div class="fin-note">
+      <p class="fin-note-head">*Note</p>
+      <ul>
+        <li><b>Discrete commitment:</b> a specific, attributable sum of grant or aid formally announced for a named initiative. These charts exclude repayable loan facilities and large multi-year pledges or mobilisation targets, which are aspirational or repayable rather than committed spending and appear in the table instead.</li>
+        <li><b>Attribution:</b> where an initiative spans more than one domain, its commitment is reflected in every domain it spans. The domain amounts are domain-related and not mutually exclusive, so the bars may sum to more than the portfolio total.</li>
+      </ul>
+    </div>
+
+    <div class="fin-table-wrap">
+      <table class="fin-table">
+        <thead>
+          <tr><th>Initiative</th><th>Year</th><th>Committed by</th><th>Amount (USD)</th><th>Category</th><th>Disbursement / Delivery</th></tr>
+        </thead>
+        <tbody>
+          <tr onclick="openFin(0)" title="Funding detail and sources" class="fin-src-row"><td><strong>Quad Vaccine Partnership</strong></td><td>2021</td><td>United States (DFC)</td><td class="fin-amt">50 million</td><td><span class="fin-type-loan">Loan</span></td><td class="fin-partial">Disbursed to Biological E.</td></tr>
+          <tr onclick="openFin(1)" title="Funding detail and sources" class="fin-src-row"><td><strong>Quad Vaccine Partnership (last-mile)</strong></td><td>2021</td><td>Australia</td><td class="fin-amt">77 million</td><td><span class="fin-type-aid">Aid</span></td><td class="fin-partial">~290M doses delivered, 29% of target.</td></tr>
+          <tr onclick="openFin(2)" title="Funding detail and sources" class="fin-src-row"><td><strong>Quad Vaccine Partnership</strong></td><td>2021</td><td>Japan (JBIC)</td><td class="fin-amt">3.3 billion</td><td><span class="fin-type-loan">Loan</span></td><td class="fin-na">Facility established. Drawdown not public.</td></tr>
+          <tr onclick="openFin(3)" title="Funding detail and sources" class="fin-src-row"><td><strong>Quad Vaccine Partnership</strong></td><td>2021</td><td>Japan–India (JBIC/EXIM)</td><td class="fin-amt">100 million</td><td><span class="fin-type-loan">Loan</span></td><td class="fin-partial">Operational. Disbursement not public.</td></tr>
+          <tr onclick="openFin(4)" title="Funding detail and sources" class="fin-src-row"><td><strong>Vaccine Capacity Upgrade (VAHSI)</strong></td><td>2021</td><td>Australia</td><td class="fin-amt">100 million</td><td><span class="fin-type-aid">Aid</span></td><td class="fin-na">Multi-country delivery per DFAT evaluation.</td></tr>
+          <tr onclick="openFin(5)" title="Funding detail and sources" class="fin-src-row"><td><strong>Quad STEM Fellowship</strong></td><td>2021</td><td>Schmidt Futures / IIE</td><td class="fin-amt">10 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-na">Privately funded scholarship pool.</td></tr>
+          <tr onclick="openFin(6)" title="Funding detail and sources" class="fin-src-row"><td><strong>Quality Infrastructure Pledge</strong></td><td>2022</td><td>All four</td><td class="fin-amt">50 billion</td><td><span class="fin-type-pledge">Pledge</span></td><td class="fin-na">Five-year assistance and investment pledge.</td></tr>
+          <tr onclick="openFin(7)" title="Funding detail and sources" class="fin-src-row"><td><strong>Last-Mile Vaccine Delivery</strong></td><td>2022</td><td>All four</td><td class="fin-amt">2 billion</td><td><span class="fin-type-pledge">Pledge</span></td><td class="fin-na">Combined Quad pledge.</td></tr>
+          <tr onclick="openFin(8)" title="Funding detail and sources" class="fin-src-row"><td><strong>CEPI Vaccine and Pandemic Research</strong></td><td>2022</td><td>All four</td><td class="fin-amt">524 million</td><td><span class="fin-type-pledge">Pledge</span></td><td class="fin-na">Combined contribution to CEPI.</td></tr>
+          <tr onclick="openFin(9)" title="Funding detail and sources" class="fin-src-row"><td><strong>Vaccine Capacity Upgrade</strong></td><td>2022</td><td>Japan</td><td class="fin-amt">100 million</td><td><span class="fin-type-loan">Loan</span></td><td class="fin-na">Concessional financing.</td></tr>
+          <tr onclick="openFin(10)" title="Funding detail and sources" class="fin-src-row"><td><strong>IPMDA</strong></td><td>2022</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-partial">Operational across three regions.</td></tr>
+          <tr onclick="openFin(11)" title="Funding detail and sources" class="fin-src-row"><td><strong>Q-CHAMP / Green Shipping</strong></td><td>2022</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-na">No financial commitment specified.</td></tr>
+          <tr onclick="openFin(12)" title="Funding detail and sources" class="fin-src-row"><td><strong>HADR Mechanism</strong></td><td>2022</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-na">No standing budget. See relief responses.</td></tr>
+          <tr onclick="openFin(13)" title="Funding detail and sources" class="fin-src-row"><td><strong>Cybersecurity Partnership</strong></td><td>2022</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-na">No budget in government sources.</td></tr>
+          <tr onclick="openFin(14)" title="Funding detail and sources" class="fin-src-row"><td><strong>Infrastructure Coordination Group</strong></td><td>2022</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-na">Coordinating body.</td></tr>
+          <tr onclick="openFin(15)" title="Funding detail and sources" class="fin-src-row"><td><strong>COVAX Advance Market Commitment</strong></td><td>2023</td><td>All four</td><td class="fin-amt">5.6 billion</td><td><span class="fin-type-pledge">Pledge</span></td><td class="fin-na">Cumulative Quad pledges to COVAX.</td></tr>
+          <tr onclick="openFin(16)" title="Funding detail and sources" class="fin-src-row"><td><strong>Cable Connectivity (CABLES)</strong></td><td>2023</td><td>United States</td><td class="fin-amt">5 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-partial">Programme operational.</td></tr>
+          <tr onclick="openFin(17)" title="Funding detail and sources" class="fin-src-row"><td><strong>AI-ENGAGE</strong></td><td>2023</td><td>All four</td><td class="fin-amt">6 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-partial">6M awarded to 6 consortia.</td></tr>
+          <tr onclick="openFin(18)" title="Funding detail and sources" class="fin-src-row"><td><strong>Infrastructure Fellowship</strong></td><td>2023</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-partial">First cohort delivered.</td></tr>
+          <tr onclick="openFin(19)" title="Funding detail and sources" class="fin-src-row"><td><strong>ECA Memorandum of Cooperation</strong></td><td>2023</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-na">No commitment specified.</td></tr>
+          <tr onclick="openFin(20)" title="Funding detail and sources" class="fin-src-row"><td><strong>QUIN / Investors Network</strong></td><td>2023</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-partial">Platform operational.</td></tr>
+          <tr onclick="openFin(21)" title="Funding detail and sources" class="fin-src-row"><td><strong>QIPORA</strong></td><td>2023</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-partial">Research cruises active.</td></tr>
+          <tr onclick="openFin(22)" title="Funding detail and sources" class="fin-src-row"><td><strong>Health Security Partnership</strong></td><td>2023</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-na">Surveillance architecture in place.</td></tr>
+          <tr onclick="openFin(23)" title="Funding detail and sources" class="fin-src-row"><td><strong>Quad Cyber Challenge</strong></td><td>2023</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-partial">85,000+ participants in 2023.</td></tr>
+          <tr onclick="openFin(24)" title="Funding detail and sources" class="fin-src-row"><td><strong>Cancer Moonshot</strong></td><td>2024</td><td>All four + philanthropic</td><td class="fin-amt">1.8 billion</td><td><span class="fin-type-pledge">Pledge</span></td><td class="fin-partial">HPV and radiotherapy programmes active.</td></tr>
+          <tr onclick="openFin(25)" title="Funding detail and sources" class="fin-src-row"><td><strong>US Infectious Disease Support</strong></td><td>2024</td><td>United States</td><td class="fin-amt">84.5 million</td><td><span class="fin-type-aid">Aid</span></td><td class="fin-na">Committed to 14 countries.</td></tr>
+          <tr onclick="openFin(26)" title="Funding detail and sources" class="fin-src-row"><td><strong>Off-Grid Renewables for SIDS</strong></td><td>2024</td><td>Japan</td><td class="fin-amt">122 million</td><td><span class="fin-type-aid">Aid</span></td><td class="fin-na">Renewable support for island states.</td></tr>
+          <tr onclick="openFin(27)" title="Funding detail and sources" class="fin-src-row"><td><strong>Off-Grid Renewables for SIDS</strong></td><td>2024</td><td>India</td><td class="fin-amt">2 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-na">India solar projects.</td></tr>
+          <tr onclick="openFin(28)" title="Funding detail and sources" class="fin-src-row"><td><strong>Open RAN — Palau / Pacific</strong></td><td>2024</td><td>All four</td><td class="fin-amt">20 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-partial">Deployment underway.</td></tr>
+          <tr onclick="openFin(29)" title="Funding detail and sources" class="fin-src-row"><td><strong>Open RAN Academy (Philippines)</strong></td><td>2024</td><td>United States + Japan</td><td class="fin-amt">8 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-partial">Academy operational.</td></tr>
+          <tr onclick="openFin(30)" title="Funding detail and sources" class="fin-src-row"><td><strong>Open RAN Academy (global)</strong></td><td>2024</td><td>United States</td><td class="fin-amt">7 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-na">Global expansion.</td></tr>
+          <tr onclick="openFin(31)" title="Funding detail and sources" class="fin-src-row"><td><strong>Undersea Cable Investments</strong></td><td>2024</td><td>All four</td><td class="fin-amt">140 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-na">Pacific cable financing.</td></tr>
+          <tr onclick="openFin(32)" title="Funding detail and sources" class="fin-src-row"><td><strong>Cable Training Programme</strong></td><td>2024</td><td>United States</td><td class="fin-amt">3.4 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-na">Programme extended.</td></tr>
+          <tr onclick="openFin(33)" title="Funding detail and sources" class="fin-src-row"><td><strong>BioExplore Initiative</strong></td><td>2024</td><td>All four</td><td class="fin-amt">2 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-na">Early research phase.</td></tr>
+          <tr onclick="openFin(34)" title="Funding detail and sources" class="fin-src-row"><td><strong>Clean Energy Supply Chain Program</strong></td><td>2024</td><td>Australia</td><td class="fin-amt">33 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-partial">Project assessments complete.</td></tr>
+          <tr onclick="openFin(35)" title="Funding detail and sources" class="fin-src-row"><td><strong>US Solar Manufacturing (DFC)</strong></td><td>2024</td><td>United States (DFC)</td><td class="fin-amt">750 million</td><td><span class="fin-type-loan">Loan</span></td><td class="fin-na">Loans to Tata Power Solar and First Solar.</td></tr>
+          <tr onclick="openFin(36)" title="Funding detail and sources" class="fin-src-row"><td><strong>Energy Efficiency Initiative</strong></td><td>2024</td><td>United States</td><td class="fin-amt">1.25 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-na">Early stage.</td></tr>
+          <tr onclick="openFin(37)" title="Funding detail and sources" class="fin-src-row"><td><strong>India Undergraduate STEM Scholarship</strong></td><td>2024</td><td>India</td><td class="fin-amt">0.5 million</td><td><span class="fin-type-grant">Grant</span></td><td class="fin-na">Fifty scholarships.</td></tr>
+          <tr onclick="openFin(38)" title="Funding detail and sources" class="fin-src-row"><td><strong>PNG (Enga) Landslide Relief</strong></td><td>2024</td><td>All four</td><td class="fin-amt">5 million</td><td><span class="fin-type-aid">Aid</span></td><td class="fin-na">Combined Quad relief.</td></tr>
+          <tr onclick="openFin(39)" title="Funding detail and sources" class="fin-src-row"><td><strong>Vietnam Typhoon Yagi Relief</strong></td><td>2024</td><td>All four</td><td class="fin-amt">4 million</td><td><span class="fin-type-aid">Aid</span></td><td class="fin-na">Combined Quad relief.</td></tr>
+          <tr onclick="openFin(40)" title="Funding detail and sources" class="fin-src-row"><td><strong>MAITRI / Quad-at-Sea / Logistics</strong></td><td>2024</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-partial">Pre-operational.</td></tr>
+          <tr onclick="openFin(41)" title="Funding detail and sources" class="fin-src-row"><td><strong>Myanmar Earthquake Relief</strong></td><td>2025</td><td>All four</td><td class="fin-amt">30 million</td><td><span class="fin-type-aid">Aid</span></td><td class="fin-na">Over 30M combined relief.</td></tr>
+          <tr onclick="openFin(42)" title="Funding detail and sources" class="fin-src-row"><td><strong>Ports of the Future</strong></td><td>2025</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-partial">Fiji project underway.</td></tr>
+          <tr onclick="openFin(43)" title="Funding detail and sources" class="fin-src-row"><td><strong>Critical Minerals Initiative and Framework</strong></td><td>2026</td><td>All four</td><td class="fin-amt">20 billion</td><td><span class="fin-type-pledge">Pledge</span></td><td class="fin-na">Adopted May 2026.</td></tr>
+          <tr onclick="openFin(44)" title="Funding detail and sources" class="fin-src-row"><td><strong>Health Emergency Preparedness Training</strong></td><td>2026</td><td>All four</td><td class="fin-amt">50 million</td><td><span class="fin-type-aid">Aid</span></td><td class="fin-na">Regional response training.</td></tr>
+          <tr onclick="openFin(45)" title="Funding detail and sources" class="fin-src-row"><td><strong>Indo-Pacific Energy Security / Maritime Surveillance</strong></td><td>2026</td><td>All four</td><td class="fin-na">Not disclosed</td><td>&mdash;</td><td class="fin-na">Formative stage.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tk-block" style="margin-top:22px;"><h4 class="tk-head">Funding Architecture and Scale</h4><ul class="tk-list">
+        <li>The disclosed picture splits into three tiers, and the gap between them is itself the finding. The Quad's largest numbers are its softest commitments.</li>
+        <li>Pledges and mobilisation targets dominate, exceeding 80 billion dollars, led by the over 50 billion dollar infrastructure pledge and the up to 20 billion dollar critical minerals target.</li>
+        <li>Loan facilities form a second tier of roughly 4.4 billion dollars, dominated by Japan's JBIC COVID loan and US DFC private-sector solar loans.</li>
+        <li>Discrete grants and aid, the genuinely spendable money, total only around 711 million dollars across the entire portfolio.</li>
+        <li>The Quad's real cash footprint is a small fraction of its headline figures.</li>
+      </ul></div>
+    <div class="tk-block"><h4 class="tk-head">Funding by Country, Domain, and Delivery</h4><ul class="tk-list">
+        <li>The Quad collective pool, committed jointly rather than by a single member, is the largest at around 275 million dollars. Among individual members Australia now leads with about 210 million, ahead of Japan (~122M) and the United States (~101M).</li>
+        <li>India's direct disclosed grants are modest (~2.5M), reflecting in-kind manufacturing contributions rather than cash.</li>
+        <li>By domain, Health leads discrete commitments (~313M), followed by Security (~222M), Climate (~164M), and Infrastructure (~148M), with Education and Exchange a distant last (~11M).</li>
+        <li>Health attracts the largest headline pledges. COVAX, last-mile delivery, the Cancer Moonshot, and CEPI together exceed 10 billion dollars.</li>
+        <li>Disbursement data is the single biggest transparency gap. Almost no government source reports money actually spent, making independent value-for-money assessment effectively impossible.</li>
+      </ul></div>
+    <div class="chart-foot"></div>
+  </div>
+</div>
+
+
+<!-- SLIDE 4: SUBMIT AN UPDATE -->
+<div class="slide" id="s3">
+  <div class="slide-inner">
+    <h2 class="slide-title">Submit an Update</h2>
+    <p class="su-intro">Have an update? Found an error? Let us know.</p>
+    <div class="su-form">
+      <label for="su-name">Your name</label>
+      <input id="su-name" type="text" placeholder="Name">
+      <label for="su-email">Your email</label>
+      <input id="su-email" type="email" placeholder="you@example.com">
+      <label for="su-init">Which initiative?</label>
+      <select id="su-init"><option value="">General / Other</option></select>
+      <label for="su-update">Your update</label>
+      <textarea id="su-update" placeholder="Describe the update, change, or correction..."></textarea>
+      <label for="su-url">Source URL</label>
+      <input id="su-url" type="url" placeholder="https://...">
+      <button class="su-submit" onclick="submitUpdate()">Submit update</button>
+      <p class="su-note">Submitting opens your email app with the details pre-filled and addressed to the Quad Monitor team. Nothing is sent until you press send in your email app.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FINANCE DETAIL MODAL -->
+<div id="fin-modal-overlay" onclick="closeFinOverlay(event)">
+  <div id="fin-modal-box">
+    <button id="fin-modal-close" onclick="closeFin()">&times;</button>
+    <h2 id="fin-modal-title"></h2>
+    <div id="fin-modal-amt"></div>
+    <div id="fin-modal-body"></div>
+    <div class="modal-sources" id="fin-modal-src"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeOverlay(event)">
+  <div id="modal-box">
+    <button id="modal-close" onclick="closeModal()">&times;</button>
+    <h2 id="modal-title"></h2>
+    <div id="modal-meta"></div>
+    <div class="modal-columns">
+      <div class="modal-col"><h3>Intended Objectives and Tangible Targets</h3><div id="modal-obj"></div><div class="modal-sources" id="modal-obj-src"></div></div>
+      <div class="modal-col"><h3 class="col-right-header">Objectives Met and Tangibles Delivered</h3><div id="modal-del"></div><div class="modal-sources" id="modal-del-src"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = [{"id": 1, "name": "Quad Vaccine Partnership", "year": 2021, "summit": "First Leaders' Summit", "venue": "Washington D.C. (Virtual)", "host": "Washington D.C., US (Virtual)", "status": "Inactive", "domain": "Health", "type": "Relief", "objectives_html": "<ul class=\"kv-list\"><li>Deliver one billion COVID-19 vaccine doses to the Indo-Pacific by end-2022</li><li>Combine US finance, Indian manufacturing, Japanese loans and Australian last-mile delivery</li><li>Offer a democratic alternative to China's vaccine diplomacy</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Around 290 million doses delivered under the Quad banner, roughly 29% of the one-billion target</li><li>US DFC financing expanded Biological E to about 75 million doses a month, a lasting manufacturing asset</li><li>Proved the four nations could coordinate finance, manufacturing and distribution at scale</li><li class=\"kv-none\">The headline one-billion-dose target was missed by a wide margin</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Loan (US DFC) $50M, Aid (Australia) $77M, Loan (Japan JBIC) $3.3B. Pledges: COVAX ~$5.6B, last-mile ~$2B, CEPI $524M.</div>", "performance": "Unsatisfactory", "good_type": "Extra-Quad", "stars": 2}, {"id": 2, "name": "Critical and Emerging Technology Working Group", "year": 2021, "summit": "First Leaders' Summit", "venue": "Washington D.C.", "host": "Tokyo, Japan (Virtual)", "status": "Active", "domain": "Security (Critical and Emerging Tech)", "type": "Standard Setting; Resilience", "objectives_html": "<ul class=\"kv-list\"><li>Shape global standards for AI, 5G, semiconductors and quantum around democratic values</li><li>Diversify telecoms away from high-risk vendors</li><li>Map and harden semiconductor supply chains</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Oversaw the Pacific's first Open RAN deployment in Palau, a secure vendor-diverse alternative</li><li>Seeded the Q-ISCN standards bloc and a Semiconductor Contingency Network</li><li>Funded AI-ENGAGE ($6M) and stood up the Quad Investors Network</li><li>Drew India into Western technology ecosystems without forcing it to abandon strategic autonomy</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Grant: AI-ENGAGE research awards of $6M flow from this group's agenda.</div>", "performance": "Satisfactory", "good_type": "Extra-Quad", "stars": 4}, {"id": 3, "name": "Quad STEM Fellowship", "year": 2021, "summit": "First Leaders' Summit", "venue": "Washington D.C.", "host": "Washington D.C., US", "status": "Active", "domain": "Education and Exchange", "type": "Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Fund 100 graduate STEM scholars a year, drawn equally from the four nations</li><li>Build a values-aligned cohort of scientists and technologists</li><li>Extend reach across the Indo-Pacific over time</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Delivered a full 100-scholar inaugural cohort in 2023</li><li>Extended to all ten ASEAN states (50 fellows) in 2024 and to Japanese host universities in 2025</li><li>Backed by a $10M corporate-sponsor pool for sustainability</li><li class=\"kv-none\">Annual intake compressed from 100 to about 37 by year three, signalling capacity strain</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Grant: $10M pool from private corporate sponsors (Google, Boeing, Mastercard and others), not a government budget.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 3}, {"id": 4, "name": "Quad Shipping Taskforce / Green Shipping Corridors", "year": 2021, "summit": "First Leaders' Summit", "venue": "Washington D.C.", "host": "Washington, D.C., United States / Tokyo, Japan", "status": "Active", "domain": "Climate", "type": "Sustainability", "objectives_html": "<ul class=\"kv-list\"><li>Establish two to three low- or zero-emission shipping corridors by 2030</li><li>Anchor green corridors at Los Angeles, Mumbai, Sydney and Yokohama</li><li>Standardise rules for alternative marine fuels and shore-to-ship power</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>India set up a National Centre of Excellence for Green Port and Shipping and issued Harit Sagar guidelines</li><li>Mumbai Port reached about 90% renewable electricity, Australia issued a maritime emissions action plan</li><li class=\"kv-none\">No functioning green shipping corridor has been established</li><li class=\"kv-none\">The 2030 corridor target is increasingly difficult to meet</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Unsatisfactory", "good_type": "Extra-Quad", "stars": 1}, {"id": 5, "name": "Indo-Pacific Partnership for Maritime Domain Awareness (IPMDA)", "year": 2022, "summit": "Second Leaders' Summit", "venue": "Tokyo", "host": "Tokyo, Japan", "status": "Active", "domain": "Security (Maritime)", "type": "Data Sharing; Monitoring; Interoperability", "objectives_html": "<ul class=\"kv-list\"><li>Build a real-time maritime surveillance network across the Indo-Pacific</li><li>Pool commercial satellite, radar and coastguard data for three focus regions</li><li>Expose illegal fishing, trafficking and covert military movements</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Live information-sharing architecture operational across the Pacific Islands, Southeast Asia and the Indian Ocean</li><li>Enabled regional partners to detect dark vessels that disable transponders, at unprecedented scale</li><li>Training delivered to Pacific and Southeast Asian maritime agencies</li><li>Strengthens partner sovereignty without requiring formal security agreements</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Satisfactory", "good_type": "Extra-Quad", "stars": 5}, {"id": 6, "name": "Quad Infrastructure Coordination Group", "year": 2022, "summit": "Second Leaders' Summit", "venue": "Tokyo", "host": "Tokyo, Japan", "status": "Active", "domain": "Infrastructure", "type": "Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Align the four nations' separate infrastructure financing programmes</li><li>Produce joint gap assessments and common due-diligence standards</li><li>Present a coherent alternative to coercive connectivity financing</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Seeded the Quad Infrastructure Fellowship (100 annual placements, Hiroshima 2023)</li><li>Seeded the Export Credit Agencies Memorandum of Cooperation (Hiroshima 2023)</li><li>Underpins the over $50B infrastructure assistance and investment pledge (Tokyo 2022)</li><li class=\"kv-none\">Coordination itself disburses no capital, the $50B figure is a multi-year pledge</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Pledge: over $50B in infrastructure assistance and investment over five years sits under this agenda.</div>", "performance": "Satisfactory", "good_type": "Intra-Quad", "stars": 3}, {"id": 7, "name": "Climate Information Services (CIS) Initiative", "year": 2022, "summit": "Second Leaders' Summit", "venue": "Tokyo", "host": "Tokyo, Japan", "status": "Active", "domain": "Climate", "type": "Resilience; Interoperability; Data Sharing", "objectives_html": "<ul class=\"kv-list\"><li>Give climate-vulnerable communities timely, actionable weather and climate data</li><li>Integrate the four nations' satellite and forecasting systems</li><li>Build local capacity to act on forecasts</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Data-sharing architecture between the four countries is in place</li><li>Australia's Weather-Ready Pacific and Japan's AP-PLAT portal deliver regional projections</li><li class=\"kv-none\">National systems still operate largely in parallel rather than as one integrated platform</li><li class=\"kv-none\">Last-mile delivery to communities without internet or specialist staff remains inconsistent</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 3}, {"id": 8, "name": "Quad Cybersecurity Partnership", "year": 2022, "summit": "Second Leaders' Summit", "venue": "Tokyo", "host": "Tokyo, Japan", "status": "Active", "domain": "Security (Cyber)", "type": "Standard Setting", "objectives_html": "<ul class=\"kv-list\"><li>Build a shared cybersecurity posture and export it across the Indo-Pacific</li><li>Publish joint secure-software principles</li><li>Coordinate incident response and threat-intelligence sharing</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Joint principles on software supply-chain security and secure-by-design have been published</li><li>A framework for regional capacity building is in place</li><li class=\"kv-none\">Beyond published principles, concrete outputs are difficult to verify from public sources</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Intra-Quad", "stars": 2}, {"id": 9, "name": "Commercial Space Cooperation", "year": 2022, "summit": "Second Leaders' Summit", "venue": "Tokyo", "host": "Tokyo, Japan", "status": "Active", "domain": "Security (Space)", "type": "Interoperability; Data Sharing; Monitoring", "objectives_html": "<ul class=\"kv-list\"><li>Leverage the four nations' space assets for shared security and environmental goals</li><li>Integrate earth-observation data for disaster response and maritime surveillance</li><li>Explore commercial space cooperation</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Earth-observation data feeds the IPMDA and Climate Information Services workstreams</li><li>Space situational awareness cooperation deepened among partners</li><li class=\"kv-none\">The promised standalone commercial space partnership has not materialised as a distinct programme</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Intra-Quad", "stars": 2}, {"id": 10, "name": "Quad HADR Mechanism & Logistics Hub", "year": 2022, "summit": "Second Leaders' Summit", "venue": "Tokyo", "host": "Tokyo, Japan / Wilmington, Delaware, United States", "status": "Active", "domain": "Security (Disaster)", "type": "Relief; Resilience", "objectives_html": "<ul class=\"kv-list\"><li>Pre-position disaster relief capacity for rapid Indo-Pacific response</li><li>Designate logistics hubs and pre-positioned supplies</li><li>Build interoperability through joint exercises</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Joint disaster-response exercises conducted, logistics frameworks partially operationalised</li><li>Recommitted politically at the 2024 Wilmington Summit</li><li class=\"kv-none\">Pre-positioned hubs, dedicated stockpiles and tested rapid-deployment protocols have not been established</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Aid (event responses under this mechanism): PNG landslide $5M, Vietnam typhoon $4M, Myanmar earthquake $30M.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 11, "name": "Quad Counterterrorism Working Group (CTWG)", "year": 2023, "summit": "Eighth Foreign Ministers' Meeting", "venue": "New Delhi", "host": "New Delhi, India", "status": "Active", "domain": "Security (Terrorism)", "type": "Interoperability; Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Share intelligence on terrorist financing, foreign fighters and online radicalisation</li><li>Help regional partners build resilience against violent extremism</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Government sources record the group's establishment in March 2023</li><li class=\"kv-none\">No joint statements naming networks, no disclosed arrangements, no verifiable regional programmes</li><li class=\"kv-none\">No publicly visible output of any kind</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Unsatisfactory", "good_type": "Intra-Quad", "stars": 1}, {"id": 12, "name": "Quad International Standards Cooperation Network (Q-ISCN)", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Security (Critical and Emerging Tech)", "type": "Standard Setting", "objectives_html": "<ul class=\"kv-list\"><li>Coordinate voting and positions inside global standards bodies (ITU, ISO, IEEE)</li><li>Prevent authoritarian capture of AI, 6G and digital-identity standards</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>A functioning coordination desk exists, technical delegations now align before key votes</li><li class=\"kv-none\">Whether this has shifted specific votes or outcomes is not documented in public sources</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 13, "name": "Quad Infrastructure Fellowship Program", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Infrastructure", "type": "Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Build a pipeline of skilled Indo-Pacific infrastructure professionals</li><li>Deliver 100 annual fellowship placements with in-country training</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Operational, with its first cohort delivered</li><li>Coordinated jointly across DFAT, US DFC, JICA and Indian agencies rather than four parallel schemes</li><li class=\"kv-none\">Modest in scale relative to regional need</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Satisfactory", "good_type": "Extra-Quad", "stars": 3}, {"id": 14, "name": "Quad Partnership for Cable Connectivity and Resilience", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Security (Telecommunications); Infrastructure", "type": "Interoperability; Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Finance new subsea cable deployments in the Pacific Islands</li><li>Diversify away from single-vendor and single-route dependencies</li><li>Establish a governance framework for cable security</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Over $140M committed by Quad partners toward Pacific cable connectivity and resilience</li><li>Convened the Wavelength Forum (New Delhi, 2025) for governments, industry and regulators</li><li>US CABLES technical-assistance and a cable-security training programme stood up</li><li>Largest discrete infrastructure commitment in the portfolio, though China's cable diplomacy still outpaces it</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Grant: ~$148.4M total (subsea cables $140M+, CABLES $5M, cable training $3.4M).</div>", "performance": "Unsatisfactory", "good_type": "Extra-Quad", "stars": 5}, {"id": 15, "name": "Export Credit Agencies (ECAs) Memorandum of Cooperation (MOC)", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Infrastructure; Climate", "type": "Interoperability; Resilience", "objectives_html": "<ul class=\"kv-list\"><li>Align the four nations' export credit and development finance institutions</li><li>Standardise due diligence and share project pipelines</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Memorandum signed, agencies now share project assessments for priority regions</li><li>Joint project evaluations undertaken by NEXI and partners</li><li class=\"kv-none\">The intended step-change in combined financing volume has not materialised</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Intra-Quad", "stars": 2}, {"id": 16, "name": "Advancing Innovation to Empower Nextgen Agriculture (AI-ENGAGE)", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Climate; Agriculture", "type": "Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Apply AI, robotics and remote sensing to Indo-Pacific smallholder agriculture</li><li>Improve yields, pest management, irrigation and climate resilience</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>$6M in joint grants awarded to six international research consortia</li><li>Projects span AI crop monitoring, precision pest management and climate-adaptive advisory tools</li><li class=\"kv-none\">Early-stage research, path from funded consortium to farmer-ready tool remains long</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Grant: $6M awarded across six research consortia.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 3}, {"id": 17, "name": "Quad Investors Network (QUIN)", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Security (Critical and Emerging Tech)", "type": "Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Connect Quad-country investors to Indo-Pacific deep-tech startups</li><li>Align private capital with strategic technology priorities</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Operational platform with an active investor community</li><li>Partnered with q-ctrl on quantum-computing workforce development</li><li class=\"kv-none\">Remains a matchmaking platform rather than a fund with committed capital</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 18, "name": "Quad Indo-Pacific Oceans Research Alliance (QIPORA)", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Climate", "type": "Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Pool research vessels, satellites and marine-science expertise</li><li>Bring Indo-Pacific partners into a shared ocean-research network</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Joint research cruises, shared datasets and coordinated observations achieved</li><li>Regional partners participating, extending scientific capacity where it is most absent</li><li>Feeds oceanographic data into Climate Information Services and IPMDA</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Satisfactory", "good_type": "Extra-Quad", "stars": 3}, {"id": 19, "name": "Quad Health Security Partnership", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Health", "type": "Interoperability and Coordination", "objectives_html": "<ul class=\"kv-list\"><li>Build permanent pandemic-preparedness infrastructure across the Indo-Pacific</li><li>Create a shared pathogen-surveillance network</li><li>Harmonise clinical-trial and regulatory frameworks</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Pathogen-surveillance architecture developed with tested data-sharing protocols</li><li>Regulatory-harmonisation talks advanced toward mutual recognition of trial data</li><li>Housed the Cancer Moonshot, showing institutional flexibility</li><li class=\"kv-none\">The definitive test, a real outbreak response at speed, has not yet come</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Aid: over $50M committed for regional health emergency preparedness training (2026).</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 3}, {"id": 20, "name": "Clean Energy Supply Chain Diversification Program & Joint Principles", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan / Wilmington, Delaware, United States", "status": "Active", "domain": "Climate", "type": "Supply Chain Resilience; Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Fund alternative clean-energy supply chains away from Chinese processing</li><li>Support processing and manufacturing capacity in Quad and partner nations</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Australia provided grant funding and technical assistance, focused on hydrogen and battery materials</li><li>Supply-chain mapping and priority investment corridors identified</li><li class=\"kv-none\">Resources committed are far below the scale needed to displace Chinese dominance</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Grant: Australia A$50M (~$33M) clean energy supply chain programme.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 21, "name": "Quad Cancer Moonshot Initiative", "year": 2024, "summit": "Fourth Leaders' Summit", "venue": "Wilmington, Delaware", "host": "Wilmington, Delaware, United States", "status": "Active", "domain": "Health", "type": "Standard Setting; Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Cut cervical, colorectal and lung cancer burden across the Indo-Pacific</li><li>Set measurable targets for vaccination, screening and treatment access</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Over $1.8B in cumulative government and philanthropic commitments mobilised</li><li>HPV vaccination campaigns scaled in priority countries</li><li>Joint cancer data registry established, radiotherapy capacity-building underway where treatment was previously inaccessible</li><li>The portfolio's clearest model of focused, measurable public-health delivery</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Pledge: over $1.8B cumulative government and philanthropic commitments.</div>", "performance": "Satisfactory", "good_type": "Extra-Quad", "stars": 5}, {"id": 22, "name": "Quad Ports of the Future Partnership", "year": 2025, "summit": "Tenth Foreign Ministers' Meeting", "venue": "Washington D.C.", "host": "Washington, D.C., United States / New Delhi, India", "status": "Active", "domain": "Infrastructure; Security (Maritime)", "type": "Standard Setting; Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Develop smart, sustainable, cyber-resilient Indo-Pacific ports</li><li>Pilot at Fiji and build a replicable model</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Fiji port project received Quad-backed technical and financial support</li><li>Port digitalisation and clean-energy assessments completed</li><li>Best-practice framework on design, procurement and cyber standards established</li><li class=\"kv-none\">Young initiative, scale-up beyond Fiji not yet demonstrated</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Satisfactory", "good_type": "Extra-Quad", "stars": 3}, {"id": 23, "name": "Quad Critical Minerals Initiative & Framework", "year": 2026, "summit": "Eleventh Foreign Ministers' Meeting", "venue": "New Delhi", "host": "New Delhi, India", "status": "Active", "domain": "Security (Resource)", "type": "Supply Chain Resilience", "objectives_html": "<ul class=\"kv-list\"><li>Map collective mineral reserves and processing capacity</li><li>Coordinate investment in alternative supply chains</li><li>Build governance to prevent processing chokepoints</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Joint framework formally adopted at the 2026 New Delhi Foreign Ministers' Meeting</li><li>Geological-survey and mining agencies began systematic data sharing</li><li class=\"kv-none\">Actual processing capacity and long-term offtake agreements have barely begun</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Pledge: target to mobilise up to $20B in combined government and private financing.</div>", "performance": "Mixed", "good_type": "Intra-Quad", "stars": 2}, {"id": 24, "name": "Indo-Pacific Maritime Surveillance Corporation Initiative", "year": 2026, "summit": "Eleventh Foreign Ministers' Meeting", "venue": "New Delhi", "host": "New Delhi, India", "status": "Active", "domain": "Security (Maritime)", "type": "Interoperability; Data Sharing; Monitoring", "objectives_html": "<ul class=\"kv-list\"><li>Establish a formal, jointly funded maritime surveillance body</li><li>Move from coordination to a shared operational institution</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Announced at the 2026 New Delhi Foreign Ministers' Meeting</li><li>Legal and institutional architecture under design</li><li class=\"kv-none\">No operational capability yet, too early to assess delivery</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 25, "name": "Quad Initiative on Indo-Pacific Energy Security", "year": 2026, "summit": "Eleventh Foreign Ministers' Meeting", "venue": "New Delhi", "host": "New Delhi, India", "status": "Active", "domain": "Security (Energy)", "type": "Supply Chain Resilience", "objectives_html": "<ul class=\"kv-list\"><li>Coordinate energy diplomacy and infrastructure investment</li><li>Map vulnerability hotspots and identify LNG and hydrogen corridors</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Announced at the 2026 New Delhi Foreign Ministers' Meeting</li><li>Initial energy-vulnerability mapping begun</li><li class=\"kv-none\">No concrete investment or programme yet delivered</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 1}, {"id": 26, "name": "Quad Climate Change Adaptation and Mitigation Package (Q-CHAMP)", "year": 2022, "summit": "Second Leaders' Summit", "venue": "Tokyo", "host": "Tokyo, Japan", "status": "Active", "domain": "Climate", "type": "Resilience; Capacity Building; Sustainability", "objectives_html": "<ul class=\"kv-list\"><li>Consolidate the Quad's climate agenda into one framework</li><li>Advance green shipping, clean hydrogen, methane reduction and resilient infrastructure</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Convened the Clean Hydrogen Partnership meeting (India, 2022) and the Sydney Energy Forum</li><li>Green shipping and green port work advanced incrementally under its umbrella</li><li class=\"kv-none\">Largely a label applied to existing work rather than a mechanism with new resources</li><li class=\"kv-none\">Hydrogen value-chain and methane-reduction pillars saw little progress</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 27, "name": "Countering Disinformation Working Group", "year": 2022, "summit": "Second Leaders' Summit", "venue": "Tokyo", "host": "Tokyo, Japan", "status": "Active", "domain": "Security (Information)", "type": "Standard Setting; Interoperability", "objectives_html": "<ul class=\"kv-list\"><li>Share intelligence on foreign information manipulation</li><li>Support media literacy and platform-accountability standards</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Government sources record the group's establishment in 2022</li><li class=\"kv-none\">No publicly attributable joint assessment, named actor or shared methodology</li><li class=\"kv-none\">No visible public output, a missed opportunity for a norms-focused grouping</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 1}, {"id": 28, "name": "Quad Cyber Challenge", "year": 2023, "summit": "Third Leaders' Summit", "venue": "Hiroshima", "host": "Hiroshima, Japan", "status": "Active", "domain": "Security (Cyber)", "type": "Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Build baseline cyber-hygiene awareness across Indo-Pacific populations</li><li>Reach schools, small businesses, civil society and government agencies</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Inaugural 2023 challenge reached about 85,000 participants and nearly 600 organisations</li><li>Accessible, gamified, multilingual format suited to grassroots engagement</li><li>Annual editions sustained, building a recurring platform</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Satisfactory", "good_type": "Extra-Quad", "stars": 4}, {"id": 29, "name": "Maritime Initiative for Training in the Indo-Pacific (MAITRI)", "year": 2024, "summit": "Fourth Leaders' Summit", "venue": "Wilmington, Delaware", "host": "Wilmington, Delaware, United States", "status": "Active", "domain": "Security (Maritime)", "type": "Capacity Building; Interoperability", "objectives_html": "<ul class=\"kv-list\"><li>Train Indo-Pacific maritime and coast-guard officials to act on surveillance data</li><li>Cover law enforcement, maritime law and use of domain-awareness systems</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Announced at the 2024 Wilmington Summit as a flagship India-led initiative</li><li>India's naval and coast-guard training infrastructure identified as the backbone</li><li class=\"kv-none\">Pre-operational, initial training cycles scheduled for 2025-26</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 30, "name": "Quad-at-Sea Ship Observer Mission", "year": 2024, "summit": "Fourth Leaders' Summit", "venue": "Wilmington, Delaware", "host": "Wilmington, Delaware, United States", "status": "Active", "domain": "Security (Maritime)", "type": "Interoperability", "objectives_html": "<ul class=\"kv-list\"><li>Embed partner officers as observers on US Coast Guard vessels</li><li>Align operational doctrine through direct at-sea experience</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Announced at the 2024 Wilmington Summit, first mission scheduled for 2025</li><li>Represents a shift from data infrastructure toward operational exchange</li><li class=\"kv-none\">Sustained multi-year rotational cadence not yet demonstrated</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Intra-Quad", "stars": 2}, {"id": 31, "name": "Quad Indo-Pacific Logistics Network (Pilot)", "year": 2024, "summit": "Fourth Leaders' Summit", "venue": "Wilmington, Delaware", "host": "Wilmington, Delaware, United States", "status": "Active", "domain": "Security (Disaster)", "type": "Resilience; Interoperability", "objectives_html": "<ul class=\"kv-list\"><li>Operationalise shared airlift and logistics for civilian disaster response</li><li>Activate shared capacity within hours, without case-by-case clearance</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Announced as a pilot at the 2024 Wilmington Summit</li><li>Asset inventories, authorisation protocols and staging hubs under design</li><li class=\"kv-none\">Still in planning, not yet a functioning on-call network</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 32, "name": "BioExplore Initiative", "year": 2024, "summit": "Fourth Leaders' Summit", "venue": "Wilmington, Delaware", "host": "Wilmington, Delaware, United States", "status": "Active", "domain": "Health", "type": "Capacity Building", "objectives_html": "<ul class=\"kv-list\"><li>Run collaborative AI-driven biodiversity and biotechnology research</li><li>Discover novel compounds for therapeutics, enzymes and biomaterials</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>$2M committed, initial research partnerships being established</li><li class=\"kv-none\">Commitment is modest relative to the capital-intensive scientific ambition</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Grant: $2M for collaborative biotechnology research.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}, {"id": 33, "name": "Quad Space Working Group", "year": 2021, "summit": "First Leaders' Summit", "venue": "Washington D.C.", "host": "Washington D.C., United States", "status": "Active", "domain": "Security (Space)", "type": "Interoperability; Data Sharing; Monitoring", "objectives_html": "<ul class=\"kv-list\"><li>Found the Quad's space-cooperation framework</li><li>Share earth-observation data and coordinate space situational awareness</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Established earth-observation data-sharing protocols feeding IPMDA and Climate Information Services</li><li>Seeded the 2022 Commercial Space Cooperation initiative</li><li class=\"kv-none\">Outputs were largely architectural rather than operational programmes</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Unsatisfactory", "good_type": "Intra-Quad", "stars": 2}, {"id": 34, "name": "Biotechnology Scanning Initiative", "year": 2021, "summit": "First Leaders' Summit", "venue": "Washington D.C.", "host": "Washington D.C., United States", "status": "Active", "domain": "Security (Critical and Emerging Tech)", "type": "Monitoring; Resilience", "objectives_html": "<ul class=\"kv-list\"><li>Give the four governments a shared view of strategically significant biotechnologies</li><li>Flag regulatory and biosecurity gaps before vulnerabilities solidify</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>Produced internal assessments shared among science and security agencies</li><li>Seeded the 2024 BioExplore Initiative</li><li class=\"kv-none\">No publicly visible programmatic output, contribution is policy preparation only</li></ul><div class=\"kv-fin kv-fin-none\"><b>Capital committed:</b> No funding disclosed in government sources.</div>", "performance": "Unsatisfactory", "good_type": "Intra-Quad", "stars": 1}, {"id": 35, "name": "Quad Energy Efficiency Initiative", "year": 2024, "summit": "Fourth Leaders' Summit", "venue": "Wilmington, Delaware", "host": "Wilmington, Delaware, United States", "status": "Active", "domain": "Climate", "type": "Capacity Building; Resilience", "objectives_html": "<ul class=\"kv-list\"><li>Deploy affordable, high-efficiency cooling across the Indo-Pacific</li><li>Support building codes, appliance standards and procurement reform</li></ul>", "delivered_html": "<ul class=\"kv-list\"><li>$1.25M in initial US technical assistance allocated</li><li>Engaged the International Energy Agency on aligning appliance standards</li><li class=\"kv-none\">Operational delivery at an early stage, commitment modest relative to the challenge</li></ul><div class=\"kv-fin\"><b>Capital committed:</b> Grant: $1.25M US technical assistance.</div>", "performance": "Mixed", "good_type": "Extra-Quad", "stars": 2}];
+
+// DYNAMIC HEADER OFFSET — recalculates whenever the header resizes (mobile wrap, font load, etc.)
+function syncLayout(){
+  const h=document.getElementById('site-header').offsetHeight;
+  const sc=document.getElementById('slider-container');
+  sc.style.marginTop=h+'px';
+  sc.style.height='calc(100vh - '+h+'px)';
+  document.querySelectorAll('.slide').forEach(s=>s.style.height='calc(100vh - '+h+'px)');
+}
+window.addEventListener('resize',syncLayout);
+syncLayout();
+
+// SLIDER
+let cur=0;
+const slides=[0,1,2,3].map(i=>document.getElementById('s'+i));
+const charts={};
+function go(n){
+  if(n<0||n>=slides.length)return;
+  slides[cur].classList.remove('active');slides[cur].classList.add('prev');
+  const old=cur;cur=n;
+  setTimeout(()=>slides[old].classList.remove('prev'),480);
+  slides[cur].classList.remove('prev');slides[cur].classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(a=>a.classList.toggle('active',+a.dataset.slide===cur));
+  if(cur===1&&!charts.cooplx){initDomains();initTypes();initCooperation();charts.cooplx=true;}
+  if(cur===2&&!charts.fin){initFinance();charts.fin=true;}
+}
+function changeSlide(d){go(cur+d);}
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('modal-overlay').classList.contains('open'))return;
+  if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1);
+});
+
+// TABLE
+
+// Month and summit display helpers
+const INIT_MONTHS={1:'Mar',2:'Sep',3:'Sep',4:'Sep',5:'May',6:'May',7:'May',8:'May',
+  9:'May',10:'May',11:'Mar',12:'May',13:'May',14:'May',15:'May',16:'May',17:'May',
+  18:'May',19:'May',20:'May',21:'Sep',22:'Jan',23:'May',24:'May',25:'May',26:'May',
+  27:'May',28:'May',29:'Sep',30:'Sep',31:'Sep',32:'Sep',33:'Sep',34:'Sep',35:'Sep'};
+function summitLabel(ini){
+  const s=ini.summit, v=(ini.venue||'').toLowerCase().includes('virtual');
+  if(s==="First Leaders' Summit") return v?'1st Leaders\' Summit \u2014 Virtual':'1st In-Person Leaders\' Summit';
+  if(s==="Second Leaders' Summit") return '2nd In-Person Leaders\' Summit';
+  if(s==="Third Leaders' Summit") return '3rd In-Person Leaders\' Summit';
+  if(s==="Fourth Leaders' Summit") return '4th In-Person Leaders\' Summit';
+  if(s==="Eighth Foreign Ministers' Meeting") return '8th Foreign Ministers\' Meeting';
+  if(s==="Tenth Foreign Ministers' Meeting") return '10th Foreign Ministers\' Meeting';
+  if(s==="Eleventh Foreign Ministers' Meeting") return '11th Foreign Ministers\' Meeting';
+  return s;
+}
+function venueShort(ini){
+  let v=(ini.venue||ini.host||'').replace(/\(Virtual\)/i,'').trim();
+  if(v.includes(','))v=v.split(',')[0].trim();
+  v=v.replace(/\s*\/.*$/,'').trim(); // drop secondary co-host after slash
+  return v;
+}
+function primaryDomain(d){return d.replace(/\s*\([^)]*\)/g,'').trim();}
+// Populate secondary filter options
+function updateSecondaryFilter(){
+  const pri=document.getElementById('f-primary').value;
+  const secLbl=document.getElementById('f-secondary-label');
+  const sec=document.getElementById('f-secondary');
+  sec.innerHTML='<option value="">All</option>';
+  if(!pri){secLbl.style.display='none';renderTable(DATA);return;}
+  secLbl.style.display='';
+  let opts=[];
+  if(pri==='year'){opts=[...new Set(DATA.map(d=>d.year))].sort();}
+  else if(pri==='domain'){
+    const s=new Set();
+    DATA.forEach(d=>d.domain.split(';').forEach(x=>{const p=primaryDomain(x.trim());if(p)s.add(p);}));
+    opts=[...s].sort();
+  } else if(pri==='type'){
+    const s=new Set();
+    DATA.forEach(d=>d.type.split(';').forEach(t=>{
+      const k=t.trim().replace('Capacity Buiding','Capacity Building').replace('Interoperability and Coordination','Interoperability');
+      if(k)s.add(k);
+    }));
+    opts=[...s].sort();
+  } else if(pri==='stars'){opts=['5 stars','4 stars','3 stars','2 stars','1 star'];}
+  else if(pri==='good'){opts=['Intra-Quad','Extra-Quad'];}
+  opts.forEach(o=>sec.innerHTML+=`<option value="${o}">${o}</option>`);
+  filterTable();
+}
+
+function pb(p){return`<span class="perf-badge perf-${p.toLowerCase()}">${p}</span>`;}
+function st(n){n=n||0;var s='';for(var i=1;i<=5;i++){s+='<span class="star'+(i<=n?' on':'')+'">\u2605</span>';}return '<span class="stars" title="'+n+' of 5 stars">'+s+'</span>';}
+function gb(g){const cls=g==='Intra-Quad'?'intra':'extra';return`<span class="good-${cls}">${g}</span>`;}
+function sb(s){return`<span class="status-badge status-${s.toLowerCase()}">${s}</span>`;}
+// Format domain/type for display: replace ; with middot
+function fmtSep(s){return s.replace(/;\s*/g,'<br>');}   // table cells: line-break per item
+function fmtDomain(s){return s.replace(/;\s*/g,'<br>').replace(/ and /g,' &amp; ');}  // domain column: & instead of and
+function fmtDot(s){return s.replace(/;\s*/g,' · ');}    // modal meta chips: middot
+
+function renderTable(list){
+  list=[...list].sort((a,b)=>a.year-b.year||a.id-b.id);
+  const tb=document.getElementById('tbody');tb.innerHTML='';
+  list.forEach((ini,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${idx+1}</td><td><strong>${ini.name}</strong></td><td>${(INIT_MONTHS[ini.id]||'')} ${ini.year}</td>
+      <td style="font-size:.79rem;color:#5d6d7e;">${summitLabel(ini)}<br><span style="color:#85c1e9;font-size:.72rem;">${venueShort(ini)}</span></td>
+      <td style="font-size:.79rem;">${fmtDomain(ini.domain)}</td>
+      <td style="font-size:.79rem;">${fmtSep(ini.type)}</td>
+      <td>${gb(ini.good_type||'Intra-Quad')}</td><td>${st(ini.stars)}</td>`;
+    tr.onclick=()=>openModal(ini);tb.appendChild(tr);
+  });
+  document.getElementById('tcount').textContent=`Showing ${list.length} of ${DATA.length} initiatives`;
+}
+function filterTable(){
+  const pri=document.getElementById('f-primary').value;
+  const sec=document.getElementById('f-secondary').value;
+  const se=document.getElementById('init-search');
+  const q=(se?se.value:'').trim().toLowerCase();
+  let list=DATA;
+  if(pri&&sec){
+    list=list.filter(ini=>{
+      if(pri==='year')return ini.year==sec;
+      if(pri==='domain')return ini.domain.split(';').some(x=>primaryDomain(x.trim())===sec);
+      if(pri==='type')return ini.type.split(';').map(t=>t.trim().replace('Capacity Buiding','Capacity Building').replace('Interoperability and Coordination','Interoperability')).includes(sec);
+      if(pri==='stars')return String(ini.stars)===sec.charAt(0);
+      if(pri==='good')return (ini.good_type||'Intra-Quad')===sec;
+      return true;
+    });
+  }
+  if(q){
+    list=list.filter(ini=>[ini.name,ini.domain,ini.type,ini.summit,ini.venue,ini.good_type,String(ini.year),ini.performance,ini.objectives_html||'',ini.delivered_html||''].join(' ').toLowerCase().includes(q));
+  }
+  renderTable(list);
+}
+function resetFilters(){
+  document.getElementById('f-primary').value='';
+  const se=document.getElementById('init-search');if(se)se.value='';
+  document.getElementById('f-secondary-label').style.display='none';
+  document.getElementById('f-secondary').innerHTML='<option value="">All</option>';
+  renderTable(DATA);
+}
+renderTable(DATA);
+
+// ── SOURCES ─────────────────────────────────────────────────────────────────
+const SRC={
+  WH21:{t:"Fact Sheet: Quad Leaders' Summit — The White House",u:"https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2021/09/24/fact-sheet-quad-leaders-summit/",y:"2021"},
+  WH22:{t:"Fact Sheet: Quad Leaders' Tokyo Summit — The White House",u:"https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2022/05/23/fact-sheet-quad-leaders-tokyo-summit-2022/",y:"2022"},
+  WH23:{t:"Fact Sheet: Quad Leaders' Summit, Hiroshima — The White House",u:"https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/",y:"2023"},
+  WH24:{t:"Fact Sheet: 2024 Quad Leaders' Summit — The White House",u:"https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/",y:"2024"},
+  MEA21:{t:"Fact Sheet: Quad Leaders' Summit — Ministry of External Affairs, India",u:"https://www.mea.gov.in/bilateral-documents.htm?dtl/34319/Fact_Sheet_Quad_Leaders_Summit",y:"2021"},
+  MEA24:{t:"Fact Sheet: 2024 Quad Leaders' Summit — Ministry of External Affairs, India",u:"https://www.mea.gov.in/bilateral-documents.htm?dtl/38327/Fact_Sheet_2024_Quad_Leaders_Summit",y:"2024"},
+  PIB24:{t:"Fact Sheet: 2024 Quad Leaders' Summit — Press Information Bureau, India",u:"https://www.pib.gov.in/PressReleasePage.aspx?PRID=2057460",y:"2024"},
+  MEABRF:{t:"Quad Brief — Ministry of External Affairs, India",u:"https://www.mea.gov.in/Portal/ForeignRelation/Unclassified_Quad_Brief_Feb_2025.pdf",y:"2025"},
+  MOFA21:{t:"Joint Statement from Quad Leaders — Ministry of Foreign Affairs, Japan",u:"https://www.mofa.go.jp/files/100238179.pdf",y:"2021"},
+  MOFA23:{t:"Quad Leaders' Joint Statement, Hiroshima — Ministry of Foreign Affairs, Japan",u:"https://www.mofa.go.jp/files/100506952.pdf",y:"2023"},
+  WILM:{t:"The Wilmington Declaration — Ministry of Foreign Affairs, Japan",u:"https://www.mofa.go.jp/files/100728100.pdf",y:"2024"},
+  SD26:{t:"Joint Statement from the Quad Foreign Ministers' Meeting in New Delhi — U.S. Department of State",u:"https://www.state.gov/releases/office-of-the-spokesperson/2026/05/joint-statement-from-the-quad-foreign-ministers-meeting-in-new-delhi",y:"2026"},
+  PMI24:{t:"Fact Sheet: 2024 Quad Leaders' Summit — Prime Minister's Office, India",u:"https://www.pmindia.gov.in/en/news_updates/fact-sheet-2024-quad-leaders-summit/",y:"2024"}
+};
+const IS={
+  1:{os:['WH21','MEA21','MOFA21'],ds:['WH22','WH23','MEABRF']},
+  2:{os:['WH21','MEA21','MOFA21'],ds:['WH22','WH23','WH24','MEABRF']},
+  3:{os:['WH21','MEA21'],ds:['WH22','WH23','WH24','MEABRF']},
+  4:{os:['WH21','MEA21'],ds:['WH22','WH23','MEABRF']},
+  5:{os:['WH22'],ds:['WH23','WH24','PIB24','MEABRF']},
+  6:{os:['WH21','WH22'],ds:['WH23','WH24','MEABRF']},
+  7:{os:['WH22'],ds:['WH23','WH24','MEABRF']},
+  8:{os:['WH22'],ds:['WH23','WH24','MEABRF']},
+  9:{os:['WH22'],ds:['WH23','WH24','MEABRF']},
+  10:{os:['WH22'],ds:['WH23','WH24','PIB24','MEABRF']},
+  11:{os:['WH23','MOFA23'],ds:['WH24','MEABRF']},
+  12:{os:['WH23','MOFA23'],ds:['WH24','MEABRF']},
+  13:{os:['WH23','MOFA23'],ds:['WH24','PIB24','MEABRF']},
+  14:{os:['WH23','MOFA23'],ds:['WH24','MEABRF']},
+  15:{os:['WH23','MOFA23'],ds:['WH24','MEABRF']},
+  16:{os:['WH23','MOFA23'],ds:['WH24','SD26','MEABRF']},
+  17:{os:['WH23','MOFA23'],ds:['WH24','PIB24','MEABRF']},
+  18:{os:['WH23','MOFA23'],ds:['WH24','MEABRF']},
+  19:{os:['WH23','MOFA23'],ds:['WH24','PIB24','MEABRF']},
+  20:{os:['WH23','MOFA23'],ds:['WH24','MEABRF']},
+  21:{os:['WH24','MEA24','WILM'],ds:['WH24','PIB24','PMI24','MEABRF']},
+  22:{os:['WH24','SD26'],ds:['SD26','MEABRF']},
+  23:{os:['WH24','SD26'],ds:['SD26','MEABRF']},
+  24:{os:['SD26'],ds:['SD26']},
+  25:{os:['SD26'],ds:['SD26']},
+  26:{os:['WH22'],ds:['WH23','MEABRF']},
+  27:{os:['WH22'],ds:['WH23','WH24','MEABRF']},
+  28:{os:['WH23','MOFA23'],ds:['WH24','MEABRF']},
+  29:{os:['WH24','MEA24','PIB24'],ds:['WH24','MEABRF']},
+  30:{os:['WH24','MEA24'],ds:['WH24','PIB24']},
+  31:{os:['WH24','MEA24'],ds:['WH24','MEABRF']},
+  32:{os:['WH24','MEA24','WILM'],ds:['WH24','MEABRF']},
+  33:{os:['WH21','MEA21','MOFA21'],ds:['WH22','WH23','MEABRF']},
+  34:{os:['WH21','MEA21','MOFA21'],ds:['WH23','WH24','MEABRF']},
+  35:{os:['WH24','MEA24','PIB24'],ds:['WH24','MEABRF']}
+};
+function renderSources(ids,el){
+  if(!ids||!ids.length){el.innerHTML='';return;}
+  let h='<div class="src-title">Sources</div>';
+  ids.forEach(id=>{
+    const s=SRC[id];
+    if(s)h+=`<div class="src-item"><a href="${s.u}" target="_blank" rel="noopener">${s.t}</a> (${s.y})</div>`;
+  });
+  el.innerHTML=h;
+}
+
+// MODAL
+function openModal(ini){
+  document.getElementById('modal-title').textContent=ini.name;
+  document.getElementById('modal-meta').innerHTML=
+    `<span>&#128197; ${ini.year}</span><span>&#127963; ${ini.summit}</span><span>&#128205; ${ini.venue||ini.host}</span>${st(ini.stars)}${gb(ini.good_type||'Intra-Quad')}<span>${fmtDot(ini.domain)}</span>`;
+  document.getElementById('modal-obj').innerHTML=ini.objectives_html||'<p>No information available.</p>';
+  document.getElementById('modal-del').innerHTML=ini.delivered_html||'<p>No information available.</p>';
+  const srcs=IS[ini.id]||{};
+  renderSources(srcs.os||[],document.getElementById('modal-obj-src'));
+  renderSources(srcs.ds||[],document.getElementById('modal-del-src'));
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function submitUpdate(){
+  const v=id=>(document.getElementById(id).value||'').trim();
+  const name=v('su-name'),email=v('su-email'),init=v('su-init'),upd=v('su-update'),url=v('su-url');
+  if(!upd){alert('Please describe the update before submitting.');return;}
+  const subject=encodeURIComponent('Quad Monitor update: '+(init||'General'));
+  const body=encodeURIComponent('Name: '+name+'\nEmail: '+email+'\nInitiative: '+(init||'General / Other')+'\n\nUpdate:\n'+upd+'\n\nSource URL: '+url);
+  window.location.href='mailto:amit@takshashila.org.in?subject='+subject+'&body='+body;
+}
+(function(){var s=document.getElementById('su-init');if(s){s.innerHTML='<option value="">General / Other</option>'+DATA.map(function(d){return '<option>'+d.name+'</option>';}).join('');}})();
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function closeOverlay(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// SLIDE 3: DOMAINS — Security shades of blue, others single distinct colours
+function initDomains(){
+  const isMob=window.innerWidth<=768;
+  // Labels: Security, Education & Exchange, Climate, Infrastructure, Health
+  // Labels order: Security, Climate, Infrastructure, Health, Education & Exchange
+  const labels=['Security','Climate','Infrastructure','Health','Education & Exchange'];
+  // Security: 10 shades of blue, one per sub-domain (all data at index 0 = Security)
+  const secShades=[
+    {label:'Maritime',                 color:'#0D47A1',data:[5,0,0,0,0]},
+    {label:'Critical & Emerging Tech', color:'#1565C0',data:[4,0,0,0,0]},
+    {label:'Space',                    color:'#1976D2',data:[2,0,0,0,0]},
+    {label:'Cyber & Digital',          color:'#1E88E5',data:[2,0,0,0,0]},
+    {label:'Disaster Response',        color:'#2196F3',data:[2,0,0,0,0]},
+    {label:'Counter-terrorism',        color:'#42A5F5',data:[1,0,0,0,0]},
+    {label:'Critical Resources',       color:'#64B5F6',data:[1,0,0,0,0]},
+    {label:'Telecommunications',       color:'#90CAF9',data:[1,0,0,0,0]},
+    {label:'Energy',                   color:'#BBDEFB',data:[1,0,0,0,0]},
+    {label:'Information',              color:'#E3F2FD',data:[1,0,0,0,0]},
+  ];
+  // Non-security: indices now match new label order [Sec, Cli, Inf, Hlt, Edu]
+  const otherDomains=[
+    {label:'Climate',             color:'#2E7D32',data:[0,8,0,0,0]},  // index 1
+    {label:'Infrastructure',      color:'#5B1A14',data:[0,0,5,0,0]},  // index 2
+    {label:'Health',              color:'#C9A227',data:[0,0,0,4,0]},  // index 3
+    {label:'Education & Exchange',color:'#8E44AD',data:[0,0,0,0,1]},  // index 4
+  ];
+  const allSets=[...secShades,...otherDomains];
+  const ctx=document.getElementById('domains-chart').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:allSets.map(s=>({
+      label:s.label,data:s.data,
+      backgroundColor:s.color,borderColor:'#fff',borderWidth:1.5,borderRadius:3,
+    }))},
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{
+          position:isMob?'bottom':'right',
+          labels:{font:{size:isMob?8:11},padding:isMob?4:9,boxWidth:isMob?8:14,boxHeight:isMob?8:14,
+            filter:(item)=>!['Climate','Infrastructure','Health','Education & Exchange'].includes(item.text)}
+        },
+        tooltip:{callbacks:{
+          label:c=>c.raw>0?` ${c.dataset.label}: ${c.raw}`:null,
+          filter:c=>c.raw>0
+        }}
+      },
+      scales:{
+        x:{stacked:true,beginAtZero:true,ticks:{stepSize:1,font:{size:isMob?10:12}},grid:{color:'#e8f4f8'},
+           title:{display:true,text:'Number of Initiatives',font:{size:isMob?10:12}}},
+        y:{stacked:true,
+           ticks:{font:{size:isMob?10:13},autoSkip:false,padding:isMob?4:10,
+             callback:function(v){
+               const l=this.getLabelForValue(v);
+               if(!isMob)return l;
+               const words=l.split(' ');
+               if(words.length<2)return l;
+               const mid=Math.ceil(words.length/2);
+               return[words.slice(0,mid).join(' '),words.slice(mid).join(' ')];
+             }
+           },
+           grid:{display:false},categoryPercentage:0.72,barPercentage:0.8}
+      }
+    }
+  });
+  // populate domain drill-down select
+}
+
+// SLIDE 4: TYPES
+function initTypes(){
+  const isMob=window.innerWidth<=768;
+  const counts={};
+  DATA.forEach(ini=>ini.type.split(';').forEach(t=>{
+    const k=t.trim().replace('Capacity Buiding','Capacity Building').replace('Interoperability and Coordination','Interoperability').replace('Normative','');
+    if(k)counts[k]=(counts[k]||0)+1;
+  }));
+  // Remove any empty-string key that may have resulted from stripping Normative
+  delete counts[''];
+  const sorted=Object.entries(counts).sort((a,b)=>a[1]-b[1]);
+  const ctx=document.getElementById('types-chart').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels:sorted.map(e=>e[0]),
+      datasets:[{label:'Instances',data:sorted.map(e=>e[1]),
+        backgroundColor:'#1a5276',borderColor:'#154360',borderWidth:1.5,borderRadius:5,
+        barPercentage:0.6,categoryPercentage:0.75}]},
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>` ${c.raw} instance${c.raw>1?'s':''}`}}},
+      scales:{
+        x:{beginAtZero:true,ticks:{stepSize:1,font:{size:isMob?10:12}},grid:{color:'#e8f4f8'},
+           title:{display:!isMob,text:'Number of Instances',font:{size:12}}},
+        y:{ticks:{font:{size:isMob?10:13},autoSkip:false,padding:isMob?4:12,
+             callback:function(v){
+               const l=this.getLabelForValue(v);
+               if(!isMob)return l;
+               const words=l.split(' ');
+               if(words.length<2)return l;
+               const mid=Math.ceil(words.length/2);
+               return[words.slice(0,mid).join(' '),words.slice(mid).join(' ')];
+             }
+           },
+           grid:{display:false}}
+      }
+    }
+  });
+}
+
+// TOUCH SWIPE SUPPORT — horizontal swipe navigates slides
+let _tx=0,_ty=0;
+document.addEventListener('touchstart',e=>{
+  _tx=e.touches[0].clientX;
+  _ty=e.touches[0].clientY;
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(document.getElementById('modal-overlay').classList.contains('open'))return;
+  const dx=_tx-e.changedTouches[0].clientX;
+  const dy=Math.abs(_ty-e.changedTouches[0].clientY);
+  // Only fire if clearly horizontal (not a scroll gesture)
+  /* swipe navigation disabled */
+},{passive:true});
+
+
+// SLIDE 5: FINANCES
+// SLIDE 5: COOPERATION CROSS-ANALYSIS
+function coopTypeList(ini){
+  return ini.type.split(';').map(t=>t.trim()
+    .replace('Capacity Buiding','Capacity Building')
+    .replace('Interoperability and Coordination','Interoperability')
+    .replace('Normative','').trim()).filter(Boolean);
+}
+function coopDomainList(ini){
+  const s=new Set();
+  ini.domain.split(';').forEach(x=>{const p=primaryDomain(x.trim());if(p)s.add(p);});
+  return [...s];
+}
+function initCooperation(){
+  const domSel=document.getElementById('coop-domain');
+  const typSel=document.getElementById('coop-type');
+  const domS=new Set(),typS=new Set();
+  DATA.forEach(d=>{coopDomainList(d).forEach(x=>domS.add(x));coopTypeList(d).forEach(t=>typS.add(t));});
+  [...domS].sort().forEach(d=>domSel.innerHTML+=`<option value="${d}">${d}</option>`);
+  [...typS].sort().forEach(t=>typSel.innerHTML+=`<option value="${t}">${t}</option>`);
+  renderCooperation();
+}
+function resetCoop(){
+  document.getElementById('coop-domain').value='';
+  document.getElementById('coop-type').value='';
+  renderCooperation();
+}
+function renderCooperation(){
+  const dom=document.getElementById('coop-domain').value;
+  const typ=document.getElementById('coop-type').value;
+  const total=DATA.length;
+  // Default state (no filters): show the overview, hide the cross-analysis results
+  const isDefault=!dom&&!typ;
+  document.getElementById('cooplx-landing').style.display=isDefault?'':'none';
+  document.getElementById('cooplx-results').style.display=isDefault?'none':'';
+  if(isDefault)return;
+  const palette=['#0D47A1','#15539e','#1565C0','#1976D2','#1E88E5','#2196F3','#42A5F5','#64B5F6','#90CAF9','#A6CEF5','#BBDEFB','#D6EAF8'];
+  const scope=DATA.filter(d=>!dom||coopDomainList(d).includes(dom));
+  const N=scope.length;
+  let labels=[],data=[],colors=[],chartType='bar',note='';
+
+  if(!typ){
+    // Breakdown by cooperation type within the chosen scope
+    const counts={};
+    scope.forEach(d=>coopTypeList(d).forEach(t=>counts[t]=(counts[t]||0)+1));
+    const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    labels=sorted.map(e=>e[0]);data=sorted.map(e=>e[1]);
+    colors=labels.map((_,i)=>palette[i%palette.length]);
+    const instances=data.reduce((a,b)=>a+b,0);
+    const top=sorted[0];
+    if(dom){
+      note=`<strong>Analysis</strong> The <b>${dom}</b> domain spans <b>${N}</b> initiative${N!==1?'s':''}, delivered through <b>${instances}</b> cooperation-type instances across <b>${labels.length}</b> distinct types. The most common is <b>${top[0]}</b>, used in ${top[1]} of the ${N} ${dom} initiatives (${Math.round(top[1]/N*100)}%). The chart shows the full breakdown of how ${dom} cooperation is delivered. Select a type of cooperation to drill into a single mode.`;
+    } else {
+      note=`<strong>Analysis</strong> Across all <b>${total}</b> initiatives, cooperation is delivered through <b>${labels.length}</b> distinct types, totalling <b>${instances}</b> instances. The most common mode is <b>${top[0]}</b> (${top[1]} initiatives, ${Math.round(top[1]/total*100)}% of the portfolio). Choose a domain to see how one domain breaks down, or a type to see how one mode spreads across domains.`;
+    }
+  } else if(typ&&!dom){
+    // Distribution of a single type across all domains
+    const withType=DATA.filter(d=>coopTypeList(d).includes(typ));
+    const M=withType.length;
+    const counts={};
+    withType.forEach(d=>coopDomainList(d).forEach(dm=>counts[dm]=(counts[dm]||0)+1));
+    const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    labels=sorted.map(e=>e[0]);data=sorted.map(e=>e[1]);
+    colors=labels.map((_,i)=>palette[i%palette.length]);
+    const lead=sorted[0];
+    note=`<strong>Analysis</strong> <b>${typ}</b> appears in <b>${M}</b> of the portfolio's ${total} initiatives (<b>${Math.round(M/total*100)}%</b>). The chart shows how those ${M} initiatives distribute across domains. <b>${lead[0]}</b> accounts for the largest share, with ${lead[1]} of the ${M} (${Math.round(lead[1]/M*100)}%). Add a domain filter to isolate a single domain-and-type combination.`;
+  } else {
+    // Specific domain AND type -> share doughnut
+    const withType=scope.filter(d=>coopTypeList(d).includes(typ)).length;
+    const without=N-withType;
+    const totalTypeY=DATA.filter(d=>coopTypeList(d).includes(typ)).length;
+    chartType='doughnut';
+    labels=[typ,`Other ${dom} cooperation`];
+    data=[withType,without];
+    colors=['#0D47A1','#d6eaf8'];
+    if(withType===0){
+      note=`<strong>Analysis</strong> No initiative in the <b>${dom}</b> domain uses <b>${typ}</b> as a cooperation type. ${dom} delivers its cooperation entirely through other modes. Clear the type filter to see which modes ${dom} actually uses.`;
+    } else {
+      const pctDom=Math.round(withType/N*100);
+      const shareType=totalTypeY?Math.round(withType/totalTypeY*100):0;
+      note=`<strong>Analysis</strong><ul class="coop-note-list"><li>Of the <b>${N}</b> ${dom} initiative${N!==1?'s':''}, <b>${withType}</b> use <b>${typ}</b>, which is <b>${pctDom}%</b> of all ${dom} cooperation.</li><li><b>${typ}</b> is used by <b>${totalTypeY}</b> initiative${totalTypeY!==1?'s':''} across the whole portfolio, and the ${dom} domain makes up <b>${shareType}%</b> of those (${withType} of ${totalTypeY}).</li></ul>`;
+    }
+  }
+
+  // Matched initiatives for the current domain-and-type selection
+  const matched=DATA.filter(d=>(!dom||coopDomainList(d).includes(dom))&&(!typ||coopTypeList(d).includes(typ)))
+    .sort((a,b)=>a.year-b.year||a.id-b.id);
+  let scopeLabel='All initiatives';
+  if(dom&&typ)scopeLabel=`${dom} initiatives using ${typ}`;
+  else if(dom)scopeLabel=`${dom} initiatives`;
+  else if(typ)scopeLabel=`Initiatives using ${typ}`;
+  document.getElementById('coop-list-title').textContent=`${scopeLabel} (${matched.length})`;
+  const listEl=document.getElementById('coop-list');
+  if(matched.length===0){
+    listEl.innerHTML='<div style="grid-column:1/-1;color:#5d6d7e;font-size:.84rem;padding:8px 2px;">No initiatives match this combination.</div>';
+  } else {
+    listEl.innerHTML=matched.map(d=>
+      `<div class="coop-item" onclick="openModal(DATA.find(x=>x.id===${d.id}))">`
+      +`<div class="ci-name" title="${d.name}">${d.name}</div>`
+      +`<div class="ci-line ci-year">${(INIT_MONTHS[d.id]||'')} ${d.year}</div>`
+      +`<div class="ci-line ci-dom" title="${d.domain.replace(/;/g,', ')}"><span class="ci-tag">Domain</span> ${fmtDot(d.domain)}</div>`
+      +`<div class="ci-line ci-typ" title="${d.type.replace(/;/g,', ')}"><span class="ci-tag">Type</span> ${fmtDot(d.type)}</div>`
+      +`<div class="ci-line ci-badges">${st(d.stars)}${gb(d.good_type||'Intra-Quad')}</div>`
+      +`</div>`
+    ).join('');
+  }
+
+  const ctx=document.getElementById('coop-chart').getContext('2d');
+  if(window._coopChart)window._coopChart.destroy();
+  window._coopChart=new Chart(ctx,{
+    type:chartType,
+    data:{labels,datasets:[{label:'Initiatives',data,backgroundColor:colors,
+      borderColor:'#fff',borderWidth:chartType==='doughnut'?3:1.5,borderRadius:chartType==='bar'?5:0}]},
+    options: chartType==='bar' ? {
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} initiative${c.raw!==1?'s':''}`}}},
+      scales:{x:{beginAtZero:true,ticks:{stepSize:1,font:{size:12}},grid:{color:'#e8f4f8'},
+        title:{display:true,text:'Number of Initiatives',font:{size:12}}},
+        y:{ticks:{font:{size:13},autoSkip:false},grid:{display:false}}}
+    } : {
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:12},padding:12}},
+        tooltip:{callbacks:{label:c=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return ` ${c.label}: ${c.raw} (${t?Math.round(c.raw/t*100):0}%)`;}}}}
+    }
+  });
+  document.getElementById('coop-note').innerHTML='<strong>Analysis</strong><div class="coop-note-body">'+note.replace('<strong>Analysis</strong> ','')+'</div>';
+}
+
+
+const FIN_DETAIL=[{"name": "Quad Vaccine Partnership", "amt": "50 million USD (Loan)", "blurb": "The US International Development Finance Corporation finalised a 50 million dollar loan to Biological E. Limited in October 2021 to expand COVID-19 vaccine manufacturing in Hyderabad. The financing helped build capacity of roughly 75 million doses a month, a durable biomanufacturing asset for the wider Indo-Pacific even though the broader billion-dose target was missed.", "sources": [["US DFC Press Release, DFC and Biological E. finalize financing (2021)", "https://www.dfc.gov/media/press-releases/dfc-and-biological-e-limited-finalize-financing-arrangement-expand-covid-19"], ["White House Fact Sheet, Quad Leaders' Summit (2021)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2021/09/24/fact-sheet-quad-leaders-summit/"]]},
+{"name": "Quad Vaccine Partnership (last-mile)", "amt": "77 million USD (Aid)", "blurb": "Australia committed about 77 million dollars to last-mile vaccine delivery across Southeast Asia and the Pacific, covering cold chain, logistics, and distribution to hard-to-reach communities. It formed part of the Quad's collective last-mile effort. Roughly 290 million doses were delivered under the Quad banner overall, well short of the one billion dose ambition.", "sources": [["White House Fact Sheet, Quad Leaders' Summit (2021)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2021/09/24/fact-sheet-quad-leaders-summit/"], ["Joint Statement of the Quad Leaders' Meeting, Tokyo (2022)", "https://au.usembassy.gov/quad-leaders-joint-statement/"]]},
+{"name": "Quad Vaccine Partnership", "amt": "3.3 billion USD (Loan)", "blurb": "Japan established a 3.3 billion dollar COVID-19 Crisis Response Emergency Support Loan facility through the Japan Bank for International Cooperation to finance regional vaccine procurement. As a concessional loan facility rather than a grant, actual drawdown figures against the headline ceiling are not published in government sources.", "sources": [["White House Fact Sheet, Quad Leaders' Summit (2021)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2021/09/24/fact-sheet-quad-leaders-summit/"]]},
+{"name": "Quad Vaccine Partnership", "amt": "100 million USD (Loan)", "blurb": "A roughly 100 million dollar facility between the Japan Bank for International Cooperation and EXIM India supported the Indian healthcare sector, including capacity for COVID-19 countermeasures. It is a loan facility, so committed ceilings rather than verified disbursements are what government sources record.", "sources": [["White House Fact Sheet, Quad Leaders' Tokyo Summit (2022)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2022/05/23/fact-sheet-quad-leaders-tokyo-summit-2022/"], ["White House Fact Sheet, Quad Leaders' Summit (2021)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2021/09/24/fact-sheet-quad-leaders-summit/"]]},
+{"name": "Vaccine Capacity Upgrade (VAHSI)", "amt": "100 million USD (Aid)", "blurb": "Australia's Vaccine Access and Health Security Initiative committed around 100 million dollars to strengthen vaccine access and health systems across Southeast Asia and the Pacific. A DFAT evaluation documents multi-country delivery of vaccines, cold chain support, and health-system strengthening, making it one of the better-evidenced health commitments in the portfolio.", "sources": [["Australian DFAT, Evaluation of the Vaccine Access and Health Security Initiative", "https://www.dfat.gov.au/publications/development/evaluation-vaccine-access-and-health-security-initiative-vahsi"], ["Joint Statement of the Quad Leaders' Meeting, Tokyo (2022)", "https://au.usembassy.gov/quad-leaders-joint-statement/"]]},
+{"name": "Quad STEM Fellowship", "amt": "10 million USD (Grant)", "blurb": "The Quad Fellowship is underpinned by a 10 million dollar pool from a private foundation, Schmidt Futures, administered by the Institute of International Education, rather than by government budgets. It has funded successive cohorts of graduate STEM scholars drawn from the four nations and, later, ASEAN. This figure is the one non-government source in the table and is flagged accordingly.", "sources": [["Quad Fellowship, First Cohort announcement (Schmidt Futures / IIE, 2022)", "https://www.quadfellowship.org/the-quad-nations-announce-the-first-cohort-of-quad-fellows"], ["White House Fact Sheet, Quad Leaders' Summit (2021)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2021/09/24/fact-sheet-quad-leaders-summit/"]]},
+{"name": "Quality Infrastructure Pledge", "amt": "50 billion USD (Pledge)", "blurb": "At the 2022 Tokyo Summit the Quad pledged to extend more than 50 billion dollars of infrastructure assistance and investment across the Indo-Pacific over five years. It is an aspirational multi-year pledge that bundles grants, loans, and private investment rather than an appropriated sum, which is why it sits in the table but not in the discrete-commitment charts.", "sources": [["MEA India, Quad Joint Leaders' Statement, Tokyo (2022)", "https://www.mea.gov.in/bilateral-documents.htm?dtl/35357/Quad_Joint_Leaders_Statement"], ["Joint Statement of the Quad Leaders' Meeting, Tokyo (2022)", "https://au.usembassy.gov/quad-leaders-joint-statement/"]]},
+{"name": "Last-Mile Vaccine Delivery", "amt": "2 billion USD (Pledge)", "blurb": "The Quad collectively pledged over 2 billion dollars toward global last-mile vaccine delivery, announced in the Tokyo leaders' statements. As a combined pledge spanning several national programmes and instruments, it is recorded as an aspirational figure rather than verified spending.", "sources": [["Joint Statement of the Quad Leaders' Meeting, Tokyo (2022)", "https://au.usembassy.gov/quad-leaders-joint-statement/"], ["MEA India, Quad Joint Leaders' Statement, Tokyo (2022)", "https://www.mea.gov.in/bilateral-documents.htm?dtl/35357/Quad_Joint_Leaders_Statement"]]},
+{"name": "CEPI Vaccine and Pandemic Research", "amt": "524 million USD (Pledge)", "blurb": "The Quad partners highlighted a combined contribution of about 524 million dollars to the Coalition for Epidemic Preparedness Innovations for vaccine and pandemic research. It pools national contributions to a multilateral body, so it is treated as a pledge in this table.", "sources": [["US Embassy Japan, Quad Joint Leaders' Statement (2022)", "https://my.usembassy.gov/quad-joint-leaders-statement/"], ["MEA India, Quad Joint Leaders' Statement, Tokyo (2022)", "https://www.mea.gov.in/bilateral-documents.htm?dtl/35357/Quad_Joint_Leaders_Statement"]]},
+{"name": "Vaccine Capacity Upgrade", "amt": "100 million USD (Loan)", "blurb": "Japan extended around 100 million dollars in concessional financing to expand regional vaccine manufacturing capacity, part of its broader health support under the Quad. As concessional lending rather than grant aid, it is categorised as a loan.", "sources": [["US Embassy Japan, Quad Joint Leaders' Statement (2022)", "https://my.usembassy.gov/quad-joint-leaders-statement/"]]},
+{"name": "IPMDA", "amt": "No disclosed budget", "blurb": "The Indo-Pacific Partnership for Maritime Domain Awareness is one of the Quad's most operationally credible programmes, yet no government source attaches a specific budget to it. It is resourced through existing national agency commitments for commercial satellite data and training rather than a ring-fenced Quad allocation.", "sources": [["White House Fact Sheet, Quad Leaders' Tokyo Summit (2022)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2022/05/23/fact-sheet-quad-leaders-tokyo-summit-2022/"]]},
+{"name": "Q-CHAMP / Green Shipping", "amt": "No disclosed budget", "blurb": "The Quad Climate Change Adaptation and Mitigation Package consolidated existing climate work under one label. Government sources specify no dedicated budget, and its constituent programmes draw on separate national resources.", "sources": [["White House Fact Sheet, Quad Leaders' Tokyo Summit (2022)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2022/05/23/fact-sheet-quad-leaders-tokyo-summit-2022/"]]},
+{"name": "HADR Mechanism", "amt": "No disclosed budget", "blurb": "The Humanitarian Assistance and Disaster Relief Mechanism is a coordinating framework with no standing budget in government sources. Its money appears instead as specific disaster responses, such as the Myanmar, Papua New Guinea, and Vietnam relief listed below.", "sources": [["White House Fact Sheet, Quad Leaders' Tokyo Summit (2022)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2022/05/23/fact-sheet-quad-leaders-tokyo-summit-2022/"]]},
+{"name": "Cybersecurity Partnership", "amt": "No disclosed budget", "blurb": "The Quad Cybersecurity Partnership delivers joint principles and information sharing but carries no disclosed budget. Its most concrete public output, the annual Cyber Challenge, is also unbudgeted in government sources.", "sources": [["White House Fact Sheet, Quad Leaders' Tokyo Summit (2022)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2022/05/23/fact-sheet-quad-leaders-tokyo-summit-2022/"]]},
+{"name": "Infrastructure Coordination Group", "amt": "No disclosed budget", "blurb": "The Infrastructure Coordination Group is a senior-level coordinating body without its own budget. The headline infrastructure money sits in the separate Quality Infrastructure pledge of over 50 billion dollars.", "sources": [["White House Fact Sheet, Quad Leaders' Tokyo Summit (2022)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2022/05/23/fact-sheet-quad-leaders-tokyo-summit-2022/"]]},
+{"name": "COVAX Advance Market Commitment", "amt": "5.6 billion USD (Pledge)", "blurb": "Quad members' cumulative pledges to the COVAX Advance Market Commitment total an estimated 5.2 to 5.6 billion dollars. These are contributions to a global vaccine financing facility rather than Quad-specific spending, so the figure is recorded as a pledge.", "sources": [["MEA India, Quad Leaders' Joint Statement (2023)", "https://www.mea.gov.in/bilateral-documents.htm?dtl/36571/Quad_Leaders_Joint_Statement"]]},
+{"name": "Cable Connectivity (CABLES)", "amt": "5 million USD (Grant)", "blurb": "The United States committed about 5 million dollars under the CABLES programme for technical assistance and capacity building on the security of undersea cable systems across the Indo-Pacific. It funds training and advisory work rather than cable construction.", "sources": [["White House Fact Sheet, Quad Leaders' Summit Hiroshima (2023)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/"], ["PIB India, Fact Sheet, 2024 Quad Leaders' Summit (cables)", "https://www.pib.gov.in/pressreleasepage.aspx?PRID=2057454"]]},
+{"name": "AI-ENGAGE", "amt": "6 million USD (Grant)", "blurb": "Advancing Innovation to Empower Nextgen Agriculture awarded about 6 million dollars in joint research grants to six international consortia working on AI-driven crop monitoring, precision pest management, and climate-adaptive advisory tools for Indo-Pacific smallholder farmers.", "sources": [["Australian DFAT, Factsheet, Quad Foreign Ministers' Meeting New Delhi (2026)", "https://www.foreignminister.gov.au/minister/penny-wong/media-release/factsheet-quad-foreign-ministers-meeting-new-delhi-may-2026"], ["White House Fact Sheet, Quad Leaders' Summit Hiroshima (2023)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/"]]},
+{"name": "Infrastructure Fellowship", "amt": "No disclosed budget", "blurb": "The Quad Infrastructure Fellowship trains infrastructure professionals from across the Indo-Pacific. It is operational and has delivered its first cohort, but no government source discloses a dedicated budget.", "sources": [["White House Fact Sheet, Quad Leaders' Summit Hiroshima (2023)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/"]]},
+{"name": "ECA Memorandum of Cooperation", "amt": "No disclosed budget", "blurb": "The Export Credit Agencies Memorandum of Cooperation aligns the four nations' export credit and development finance institutions. It is a coordination framework with no headline financial commitment of its own.", "sources": [["White House Fact Sheet, Quad Leaders' Summit Hiroshima (2023)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/"]]},
+{"name": "QUIN / Investors Network", "amt": "No disclosed budget", "blurb": "The Quad Investors Network is a private-capital matchmaking platform rather than a fund with committed capital. Government sources disclose no budget, consistent with its role as a facilitator.", "sources": [["White House Fact Sheet, Quad Leaders' Summit Hiroshima (2023)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/"]]},
+{"name": "QIPORA", "amt": "No disclosed budget", "blurb": "The Quad Indo-Pacific Oceans Research Alliance runs joint research cruises and shared monitoring, resourced through participating national science agencies. No discrete Quad budget is disclosed.", "sources": [["White House Fact Sheet, Quad Leaders' Summit Hiroshima (2023)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/"]]},
+{"name": "Health Security Partnership", "amt": "No disclosed budget", "blurb": "The Quad Health Security Partnership built pathogen surveillance and regulatory harmonisation architecture across the four countries. Its budget is not separately disclosed, though related health training money appears under the 2026 Health Emergency commitment below.", "sources": [["White House Fact Sheet, Quad Leaders' Summit Hiroshima (2023)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/"]]},
+{"name": "Quad Cyber Challenge", "amt": "No disclosed budget", "blurb": "The Quad Cyber Challenge is a mass-participation awareness campaign that reached roughly 85,000 participants and nearly 600 organisations in 2023. It is one of the Quad's broadest-reach initiatives, yet carries no disclosed cost in government sources.", "sources": [["White House Fact Sheet, Quad Leaders' Summit Hiroshima (2023)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2023/05/20/quad-leaders-summit-fact-sheet/"]]},
+{"name": "Cancer Moonshot", "amt": "1.8 billion USD (Pledge)", "blurb": "The Quad Cancer Moonshot mobilised over 1.8 billion dollars in cumulative government and philanthropic commitments to reduce cervical, colorectal, and lung cancer burdens across the Indo-Pacific. Because it bundles philanthropic and private money with government funding over multiple years, it is recorded as a cumulative pledge. Delivery is visible in HPV vaccination campaigns and radiotherapy capacity building.", "sources": [["MEA India, Fact Sheet, Quad Cancer Moonshot Initiative (2024)", "https://www.mea.gov.in/outoging-visit-detail.htm?38326/Fact+Sheet+Quad+Countries+Launch+Cancer+Moonshot+Initiative+to+Reduce+the+Burden+of+Cancer+in+the+IndoPacific"], ["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "US Infectious Disease Support", "amt": "84.5 million USD (Aid)", "blurb": "The United States committed over 84.5 million dollars to partner with fourteen Indo-Pacific countries on infectious disease preparedness and response. It is broad health aid, with no detailed country-level disbursement breakdown in government sources.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Off-Grid Renewables for SIDS", "amt": "122 million USD (Aid)", "blurb": "Japan committed roughly 122 million dollars in grants and concessional support for off-grid renewable energy in Small Island Developing States. The development-assistance character of the support places it in the aid category, delivering solar and clean-energy systems to island partners.", "sources": [["PMO/PIB India, Fact Sheet, 2024 Quad Leaders' Summit", "https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=2057443"], ["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Off-Grid Renewables for SIDS", "amt": "2 million USD (Grant)", "blurb": "India committed about 2 million dollars to new solar projects for Small Island Developing States, complementing larger partner contributions. It is a small but specific project grant.", "sources": [["PMO/PIB India, Fact Sheet, 2024 Quad Leaders' Summit", "https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=2057443"], ["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Open RAN — Palau / Pacific", "amt": "20 million USD (Grant)", "blurb": "Roughly 20 million dollars supports the Open RAN secure-telecom deployment in Palau and the wider Pacific, a vendor-diverse alternative to high-risk telecoms infrastructure. The funds back design, supplier selection, and deployment rather than recurring operations.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Open RAN Academy (Philippines)", "amt": "8 million USD (Grant)", "blurb": "The United States and Japan committed an initial 8 million dollars to establish the Asia Open RAN Academy in the Philippines, training engineers in open, secure radio-access-network technology for regional deployment.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Open RAN Academy (global)", "amt": "7 million USD (Grant)", "blurb": "The United States pledged over 7 million dollars to expand Open RAN training and field trials globally, building on the Palau and Philippines work to scale secure telecoms expertise across partner countries.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Undersea Cable Investments", "amt": "140 million USD (Grant)", "blurb": "Quad partners committed over 140 million dollars toward undersea cable connectivity and resilience in the Pacific, financing new cable projects and diversification away from single-vendor dependencies. It is the largest discrete infrastructure commitment in the portfolio.", "sources": [["PIB India, Fact Sheet, 2024 Quad Leaders' Summit (cables)", "https://www.pib.gov.in/pressreleasepage.aspx?PRID=2057454"], ["PMO/PIB India, Fact Sheet, 2024 Quad Leaders' Summit", "https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=2057443"]]},
+{"name": "Cable Training Programme", "amt": "3.4 million USD (Grant)", "blurb": "The United States committed 3.4 million dollars to extend and expand undersea cable security training. It funds technical capacity building for regional regulators and operators rather than physical cable works.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "BioExplore Initiative", "amt": "2 million USD (Grant)", "blurb": "BioExplore committed 2 million dollars to collaborative, AI-driven biodiversity and biotechnology research across the four nations. The figure is modest relative to the scientific ambition, funding foundational research and institutional partnerships.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Clean Energy Supply Chain Program", "amt": "33 million USD (Grant)", "blurb": "Australia committed about 50 million Australian dollars, roughly 33 million US dollars, through its DCCEEW programme for clean energy supply chain projects spanning solar, hydrogen, and battery materials. It funds grants and technical assistance for diversification away from concentrated supply chains.", "sources": [["Australian DCCEEW, Quad Clean Energy Supply Chain Diversification Program", "https://www.dcceew.gov.au/energy/international-activity/quad-clean-energy-supply-chain-diversification-program"], ["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "US Solar Manufacturing (DFC)", "amt": "750 million USD (Loan)", "blurb": "The US Development Finance Corporation extended 750 million dollars in private-sector loans, 250 million to Tata Power Solar and 500 million to First Solar, to expand solar manufacturing. As repayable private-sector finance, drawdown data is not public and it is excluded from the discrete-commitment charts.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Energy Efficiency Initiative", "amt": "1.25 million USD (Grant)", "blurb": "The United States committed 1.25 million dollars in technical assistance to catalyse affordable, high-efficiency cooling across the Indo-Pacific, supporting building codes, appliance standards, and procurement practices. It is early-stage seed funding.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "India Undergraduate STEM Scholarship", "amt": "0.5 million USD (Grant)", "blurb": "India committed about 500,000 dollars for fifty undergraduate engineering scholarships for Indo-Pacific students at Indian technical institutions, a small but specific people-to-people grant.", "sources": [["PMO/PIB India, Fact Sheet, 2024 Quad Leaders' Summit", "https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=2057443"], ["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "PNG (Enga) Landslide Relief", "amt": "5 million USD (Aid)", "blurb": "Quad partners provided over 5 million dollars in combined relief following the Enga landslide in Papua New Guinea, a disaster response delivered under the broader HADR umbrella rather than as a standing programme.", "sources": [["MEA India, Quad Foreign Ministers' Meeting Joint Statement, Tokyo (2024)", "https://www.mea.gov.in/bilateral-documents.htm?dtl/38044/Quad+Foreign+Ministers+Meeting+Joint+Statement"], ["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Vietnam Typhoon Yagi Relief", "amt": "4 million USD (Aid)", "blurb": "Quad partners committed over 4 million dollars in combined relief after Typhoon Yagi struck Vietnam, an emergency disaster response coordinated among the four nations.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "MAITRI / Quad-at-Sea / Logistics", "amt": "No disclosed budget", "blurb": "The MAITRI maritime training initiative, the Quad-at-Sea Ship Observer Mission, and the Indo-Pacific Logistics Network pilot are pre-operational and carry no disclosed budgets in government sources.", "sources": [["White House Fact Sheet, 2024 Quad Leaders' Summit (2024)", "https://bidenwhitehouse.archives.gov/briefing-room/statements-releases/2024/09/21/fact-sheet-2024-quad-leaders-summit/"]]},
+{"name": "Myanmar Earthquake Relief", "amt": "30 million USD (Aid)", "blurb": "Quad partners provided over 30 million dollars in combined relief following the 2025 Myanmar earthquake, documented in DFAT and MEA statements. It is the largest single disaster response in the portfolio and is delivered under the HADR mechanism.", "sources": [["Australian DFAT, Joint Statement on Myanmar Earthquake Response (2025)", "https://www.dfat.gov.au/news/media-release/joint-statement-quad-partners-myanmar-earthquake-response"], ["MEA India, Factsheet, 2025 Quad Foreign Ministers' Meeting, Washington", "https://www.mea.gov.in/bilateral-documents.htm?dtl/39734/Factsheet++2025+Quad+Foreign+Ministers+Meeting+in+Washington+DC+July+01+2025"]]},
+{"name": "Ports of the Future", "amt": "No disclosed budget", "blurb": "The Quad Ports of the Future Partnership is upgrading port infrastructure, beginning with Fiji. Technical and financial support has been provided but no specific budget is disclosed in government sources.", "sources": [["MEA India, Factsheet, 2025 Quad Foreign Ministers' Meeting, Washington", "https://www.mea.gov.in/bilateral-documents.htm?dtl/39734/Factsheet++2025+Quad+Foreign+Ministers+Meeting+in+Washington+DC+July+01+2025"]]},
+{"name": "Critical Minerals Initiative and Framework", "amt": "20 billion USD (Pledge)", "blurb": "The Quad Critical Minerals Initiative Framework, adopted in May 2026, sets a target to mobilise up to 20 billion dollars in combined government and private financing through export credit agencies, development finance institutions, equity, loan guarantees, and offtake agreements. It is a mobilisation target rather than committed spending.", "sources": [["MEA India, Quad Foreign Ministers' Meeting Joint Statement (May 2026)", "https://www.mea.gov.in/bilateral-documents.htm?dtl/41233/Quad_Foreign_Ministers_Meeting_Joint_Statement_May_26_2026"], ["Australian DFAT, Factsheet, Quad Foreign Ministers' Meeting New Delhi (2026)", "https://www.foreignminister.gov.au/minister/penny-wong/media-release/factsheet-quad-foreign-ministers-meeting-new-delhi-may-2026"]]},
+{"name": "Health Emergency Preparedness Training", "amt": "50 million USD (Aid)", "blurb": "Quad partners committed over 50 million dollars for regional health emergency preparedness and response training, announced at the 2026 New Delhi Foreign Ministers' Meeting. It extends the Health Security Partnership's surveillance architecture into hands-on response capacity.", "sources": [["US Embassy India, Factsheet, 2026 Quad Foreign Ministers' Meeting", "https://in.usembassy.gov/factsheet-2026-quad-foreign-ministers-meeting-in-new-delhi/"], ["MEA India, Quad Foreign Ministers' Meeting Joint Statement (May 2026)", "https://www.mea.gov.in/bilateral-documents.htm?dtl/41233/Quad_Foreign_Ministers_Meeting_Joint_Statement_May_26_2026"]]},
+{"name": "Indo-Pacific Energy Security / Maritime Surveillance", "amt": "No disclosed budget", "blurb": "The Indo-Pacific Energy Security initiative and the Maritime Surveillance Corporation are in formative stages following their 2026 announcement, with no disclosed budgets in government sources.", "sources": [["MEA India, Quad Foreign Ministers' Meeting Joint Statement (May 2026)", "https://www.mea.gov.in/bilateral-documents.htm?dtl/41233/Quad_Foreign_Ministers_Meeting_Joint_Statement_May_26_2026"]]}];
+function openFin(i){
+  const d=FIN_DETAIL[i]; if(!d)return;
+  document.getElementById('fin-modal-title').textContent=d.name;
+  document.getElementById('fin-modal-amt').textContent=d.amt;
+  document.getElementById('fin-modal-body').innerHTML='<p>'+d.blurb+'</p>';
+  document.getElementById('fin-modal-src').innerHTML='<div class="src-title">Sources</div>'+d.sources.map(s=>'<div class="src-item"><a href="'+s[1]+'" target="_blank" rel="noopener">'+s[0]+'</a></div>').join('');
+  document.getElementById('fin-modal-overlay').classList.add('open');
+}
+function closeFin(){document.getElementById('fin-modal-overlay').classList.remove('open');}
+function closeFinOverlay(e){if(e.target===document.getElementById('fin-modal-overlay'))closeFin();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFin();});
+
+// Shared inline plugin: draw value labels at end of each bar
+const _barLabels={id:'barLabels',afterDatasetsDraw(chart){
+  const {ctx}=chart;
+  chart.data.datasets.forEach((ds,di)=>{
+    chart.getDatasetMeta(di).data.forEach((bar,i)=>{
+      const val=ds.data[i];
+      if(val>0){
+        ctx.save();
+        ctx.fillStyle='#5d6d7e';
+        ctx.font='10px Georgia,serif';
+        ctx.textAlign='left';
+        ctx.textBaseline='middle';
+        ctx.fillText('$'+val+'M',bar.x+6,bar.y);
+        ctx.restore();
+      }
+    });
+  });
+}};
+
+function initFinance(){
+  const isMob=window.innerWidth<=768;
+  // Domain chart (grants/aid only, USD millions)
+  const domLabels=['Health','Security','Climate','Infrastructure','Education & Exchange'];
+  const domData=[313.5, 222.4, 164.25, 148.4, 10.5];
+  const domColors=['#C9A227','#0D47A1','#2E7D32','#5B1A14','#8E44AD'];
+  const ctxD=document.getElementById('fin-domain-chart').getContext('2d');
+  new Chart(ctxD,{
+    type:'bar',
+    data:{labels:domLabels,datasets:[{label:'USD millions',data:domData,
+      backgroundColor:domColors,borderColor:domColors,borderWidth:1.5,borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>` $${c.raw.toFixed(1)}M`}}},
+      scales:{
+        x:{beginAtZero:true,max:340,ticks:{font:{size:isMob?9:11},callback:v=>v===0?'0':'$'+v+'M'},grid:{color:'#e8f4f8'}},
+        y:{ticks:{font:{size:isMob?9:11},padding:isMob?3:8},grid:{display:false}}
+      }},
+    plugins:[_barLabels]
+  });
+  // Country chart (grants/aid only, clearly attributed, USD millions)
+  const ctyLabels=['Quad Collective','United States','Japan','Australia','India'];
+  const ctyData=[275, 101.2, 122, 210, 2.5];
+  const ctyColors=['#6C3483','#B03A2E','#1A5276','#117A65','#784212'];
+  const ctxC=document.getElementById('fin-country-chart').getContext('2d');
+  new Chart(ctxC,{
+    type:'bar',
+    data:{labels:ctyLabels,datasets:[{label:'USD millions',data:ctyData,
+      backgroundColor:ctyColors,borderColor:ctyColors,borderWidth:1.5,borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>` $${c.raw.toFixed(1)}M`}}},
+      scales:{
+        x:{beginAtZero:true,max:290,ticks:{font:{size:isMob?9:11},callback:v=>v===0?'0':'$'+v+'M'},grid:{color:'#e8f4f8'}},
+        y:{ticks:{font:{size:isMob?9:11},padding:isMob?3:8},grid:{display:false}}
+      }},
+    plugins:[_barLabels]
+  });
+}
+
+// SLIDE 5: PERFORMANCE
+function initPerf(){
+  // Create doughnut chart — data populated by filterPerfLists()
+  const ctx=document.getElementById('perf-chart').getContext('2d');
+  window._perfChart=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:['Satisfactory','Mixed','Unsatisfactory'],
+      datasets:[{data:[0,0,0],
+        backgroundColor:['#1e8449','#d4ac0d','#a93226'],
+        borderColor:['#fff','#fff','#fff'],borderWidth:3,hoverOffset:10}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){
+          const total=c.dataset.data.reduce((a,b)=>a+b,0);
+          return ' '+c.label+': '+c.raw+(total>0?' ('+Math.round(c.raw/total*100)+'%)':'');
+        }}}
+      }}
+  });
+  // Build legend with updateable spans
+  const legEl=document.getElementById('perf-legend');
+  [{label:'Satisfactory',color:'#1e8449'},{label:'Mixed',color:'#d4ac0d'},{label:'Unsatisfactory',color:'#a93226'}]
+    .forEach(function({label,color}){
+      const d=document.createElement('div');d.className='perf-leg-item';
+      d.innerHTML='<span class="perf-leg-dot" style="background:'+color+'"></span>'
+        +'<strong>'+label+'</strong>';
+      legEl.appendChild(d);
+    });
+  // Render with full dataset
+  filterPerfLists();
+}
+
+function updatePerfSecondary(){
+  const pri=document.getElementById('pf-primary').value;
+  const lbl=document.getElementById('pf-secondary-label');
+  const sec=document.getElementById('pf-secondary');
+  sec.innerHTML='<option value="">All</option>';
+  if(!pri){lbl.style.display='none';filterPerfLists();return;}
+  lbl.style.display='';
+  let opts=[];
+  if(pri==='year'){
+    opts=[...new Set(DATA.map(d=>d.year))].sort();
+  } else if(pri==='domain'){
+    const s=new Set();
+    DATA.forEach(d=>d.domain.split(';').forEach(x=>{const p=primaryDomain(x.trim());if(p)s.add(p);}));
+    opts=[...s].sort();
+  } else if(pri==='type'){
+    const s=new Set();
+    DATA.forEach(d=>d.type.split(';').forEach(t=>{
+      const k=t.trim().replace('Capacity Buiding','Capacity Building')
+        .replace('Interoperability and Coordination','Interoperability')
+        .replace('Normative','').trim();
+      if(k)s.add(k);
+    }));
+    opts=[...s].sort();
+  }
+  opts.forEach(o=>sec.innerHTML+=`<option value="${o}">${o}</option>`);
+  filterPerfLists();
+}
+
+function filterPerfLists(){
+  const pri=document.getElementById('pf-primary').value;
+  const sec=document.getElementById('pf-secondary').value;
+  let list=DATA;
+  if(pri&&sec){
+    if(pri==='year')
+      list=DATA.filter(d=>d.year==sec);
+    else if(pri==='domain')
+      list=DATA.filter(d=>d.domain.split(';').some(x=>primaryDomain(x.trim())===sec));
+    else if(pri==='type')
+      list=DATA.filter(d=>d.type.split(';').map(t=>t.trim()
+        .replace('Capacity Buiding','Capacity Building')
+        .replace('Interoperability and Coordination','Interoperability')).includes(sec));
+  }
+  // Tally outcomes
+  const c={Satisfactory:0,Mixed:0,Unsatisfactory:0};
+  list.forEach(i=>{if(c[i.performance]!==undefined)c[i.performance]++;});
+  // Update pie chart
+  if(window._perfChart){
+    window._perfChart.data.datasets[0].data=[c.Satisfactory,c.Mixed,c.Unsatisfactory];
+    window._perfChart.update();
+  }
+  // Update chart title
+  const subtitle=pri&&sec?' — '+sec:'';
+  document.getElementById('perf-chart-title').textContent=
+    'Outcomes'+subtitle+' ('+list.length+' initiative'+(list.length!==1?'s':'')+')';
+  // Update column headers
+  document.getElementById('phdr-sat').textContent='Satisfactory ('+c.Satisfactory+')';
+  document.getElementById('phdr-mix').textContent='Mixed ('+c.Mixed+')';
+  document.getElementById('phdr-unsat').textContent='Unsatisfactory ('+c.Unsatisfactory+')';
+  // Rebuild initiative lists
+  const colMap={
+    Satisfactory:{el:'plist-sat',color:'#1e8449'},
+    Mixed:       {el:'plist-mix',color:'#9a7d0a'},
+    Unsatisfactory:{el:'plist-unsat',color:'#a93226'}
+  };
+  Object.entries(colMap).forEach(([cat,{el,color}])=>{
+    const listEl=document.getElementById(el);
+    listEl.innerHTML='';
+    list.filter(i=>i.performance===cat).forEach(ini=>{
+      const d=document.createElement('div');d.className='perf-item';
+      d.innerHTML=`<span style="color:${color};font-size:.75rem;flex-shrink:0">&#9679;</span><span>${ini.name}</span>`;
+      d.onclick=()=>openModal(ini);
+      listEl.appendChild(d);
+    });
+  });
+}
+</script>
+</body>
+</html>
