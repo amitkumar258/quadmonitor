@@ -101,10 +101,21 @@ def build_issue_body(new_by_section):
     return "\n".join(lines)
 
 
+def ensure_label():
+    # --force creates the label if missing and is a no-op if it already
+    # exists, so this is safe to call on every run.
+    subprocess.run(
+        ["gh", "label", "create", "quad-watch", "--color", "1565C0",
+         "--description", "Automated Quad Watch digest", "--force"],
+        check=False,
+    )
+
+
 def create_issue(title, body):
     body_path = "/tmp/quad_watch_issue_body.md"
     with open(body_path, "w") as f:
         f.write(body)
+    ensure_label()
     subprocess.run(
         ["gh", "issue", "create", "--title", title, "--body-file", body_path, "--label", "quad-watch"],
         check=True,
