@@ -44,7 +44,7 @@ body{font-family:'Inter','Lato',sans-serif;background:#ffffff;color:#2a2a2a;over
 .nav-arrow:disabled{opacity:.2;cursor:default;}
 .nav-arrow:disabled:hover{transform:translateY(-50%) scale(1);background:rgba(98,13,60,.85);}
 #prev-btn{left:16px;}#next-btn{right:16px;}
-#slide-indicators{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:1000;}
+#slide-indicators{position:fixed;bottom:42px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:1000;}
 .indicator{width:10px;height:10px;border-radius:50%;background:rgba(98,13,60,.3);cursor:pointer;transition:background .2s,transform .2s;}
 .indicator.active{background:#620d3c;transform:scale(1.3);}
 .slide-inner{max-width:1200px;margin:0 auto;padding:38px 60px 75px;width:100%;}
@@ -488,10 +488,46 @@ table.fin-table tbody tr{border-bottom:1px solid #e6e0d8;}
 #modal-meta span{background:#f5e6ee;color:#620d3c;}
 
 /* Copyright footer */
-#copyright-footer{position:fixed;bottom:10px;left:20px;font-family:'Inter','Lato',sans-serif;font-size:.72rem;color:#6b6b6b;z-index:999;line-height:1;pointer-events:all;}
+#copyright-footer{position:fixed;bottom:0;left:0;width:100%;text-align:center;font-family:'Inter','Lato',sans-serif;font-size:.71rem;color:#6b6b6b;z-index:1000;line-height:1;padding:6px 16px;background:#fff;border-top:1px solid #e6e0d8;}
 #copyright-footer a{color:#620d3c;text-decoration:none;}
 #copyright-footer a:hover{text-decoration:underline;}
-@media(max-width:768px){#copyright-footer{font-size:.65rem;left:10px;bottom:8px;}}
+@media(max-width:768px){#copyright-footer{font-size:.65rem;}}
+
+
+/* ===== GLOBAL SEARCH ===== */
+#search-btn{padding:8px 10px;display:flex;align-items:center;}
+#search-btn.active{background:rgba(255,255,255,.22);}
+#search-panel{position:fixed;top:96px;left:0;width:100%;z-index:1090;background:#fff;
+  border-bottom:1px solid #e6e0d8;box-shadow:0 6px 24px rgba(98,13,60,.13);
+  display:none;max-height:80vh;overflow:hidden;flex-direction:column;}
+#search-panel.open{display:flex;}
+#search-input-wrap{display:flex;align-items:center;gap:12px;padding:14px 50px;
+  border-bottom:1px solid #e6e0d8;flex-shrink:0;}
+#gs-input{flex:1;border:none;outline:none;font-size:1.05rem;font-family:'Inter','Lato',sans-serif;
+  color:#2a2a2a;background:transparent;}
+#gs-input::placeholder{color:#aaa;}
+#gs-close{background:none;border:none;cursor:pointer;color:#6b6b6b;font-size:1.1rem;
+  padding:4px 6px;border-radius:4px;line-height:1;transition:color .15s;}
+#gs-close:hover{color:#620d3c;}
+#gs-results{overflow-y:auto;padding:8px 50px 20px;flex:1;}
+.gs-group-label{font-family:'Inter','Lato',sans-serif;font-size:.71rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.08em;color:#6b6b6b;padding:10px 0 6px;
+  border-bottom:1px solid #e6e0d8;margin-bottom:4px;}
+.gs-item{display:flex;align-items:center;gap:12px;padding:9px 10px;cursor:pointer;
+  border-radius:7px;transition:background .15s;}
+.gs-item:hover{background:#f5f0ee;}
+.gs-icon{width:34px;height:34px;border-radius:7px;background:rgba(98,13,60,.09);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:.68rem;font-weight:700;color:#620d3c;font-family:'Inter','Lato',sans-serif;
+  text-align:center;line-height:1.2;}
+.gs-item-name{flex:1;font-size:.88rem;font-weight:600;color:#2a2a2a;line-height:1.3;}
+.gs-item-meta{font-size:.74rem;color:#6b6b6b;white-space:nowrap;}
+.gs-none{padding:24px 10px;font-size:.9rem;color:#6b6b6b;text-align:center;}
+@media(max-width:768px){
+  #search-panel{top:0;padding-top:0;}
+  #search-input-wrap{padding:10px 14px;}
+  #gs-results{padding:6px 14px 16px;}
+}
 
 </style>
 </head>
@@ -506,8 +542,19 @@ table.fin-table tbody tr{border-bottom:1px solid #e6e0d8;}
     <button class="nav-link" data-slide="1" onclick="go(1)">Cooperation Landscape</button>
     <button class="nav-link" data-slide="2" onclick="go(2)">Finances</button>
     <button class="nav-link" data-slide="3" onclick="go(3)">Submit an Update</button>
+    <button class="nav-link" id="search-btn" onclick="toggleSearch()" aria-label="Search" title="Search dashboard">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
   </nav>
 </header>
+<div id="search-panel" role="search">
+  <div id="search-input-wrap">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b6b6b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="gs-input" type="text" placeholder="Search initiatives, finance, summits, domains…" autocomplete="off" oninput="runSearch()" onkeydown="gsKeydown(event)" />
+    <button id="gs-close" onclick="closeSearch()" aria-label="Close search">✕</button>
+  </div>
+  <div id="gs-results" role="listbox"></div>
+</div>
 <div id="slider-container">
 
 <!-- SLIDE 1: INITIATIVES (Home intro merged in) -->
@@ -1672,6 +1719,96 @@ function resetFinFilters(){
   const se=document.getElementById('ff-search');if(se)se.value='';
   filterFinTable();
 }
+
+
+/* ===== GLOBAL SEARCH ===== */
+(function(){
+  function toggleSearch(){
+    const panel=document.getElementById('search-panel');
+    const btn=document.getElementById('search-btn');
+    if(panel.classList.contains('open')){closeSearch();return;}
+    // Position panel below header (handles mobile dynamic height)
+    panel.style.top=document.getElementById('site-header').offsetHeight+'px';
+    panel.classList.add('open');
+    btn.classList.add('active');
+    setTimeout(()=>document.getElementById('gs-input').focus(),50);
+  }
+  function closeSearch(){
+    document.getElementById('search-panel').classList.remove('open');
+    document.getElementById('search-btn').classList.remove('active');
+    document.getElementById('gs-input').value='';
+    document.getElementById('gs-results').innerHTML='';
+  }
+  function runSearch(){
+    const q=(document.getElementById('gs-input').value||'').toLowerCase().trim();
+    const box=document.getElementById('gs-results');
+    if(!q){box.innerHTML='';return;}
+    // Initiatives
+    const initHits=DATA.filter(d=>
+      d.name.toLowerCase().includes(q)||
+      (d.domain||'').toLowerCase().includes(q)||
+      (d.type||'').toLowerCase().includes(q)||
+      (d.summit||'').toLowerCase().includes(q)||
+      (d.venue||'').toLowerCase().includes(q)||
+      (d.status||'').toLowerCase().includes(q)
+    ).slice(0,8);
+    // Finance
+    const finHits=[];
+    FIN_DETAIL.forEach((d,i)=>{
+      if(d&&(
+        (d.name||'').toLowerCase().includes(q)||
+        (d.blurb||'').toLowerCase().includes(q)
+      ))finHits.push({d,i});
+    });
+    const finSlice=finHits.slice(0,5);
+    if(!initHits.length&&!finSlice.length){
+      box.innerHTML='<div class="gs-none">No results for <strong>'+q+'</strong></div>';return;
+    }
+    let html='';
+    if(initHits.length){
+      html+='<div class="gs-group-label">Initiatives ('+initHits.length+')</div>';
+      initHits.forEach(d=>{
+        const abbr=d.domain?d.domain.slice(0,3).toUpperCase():'INI';
+        html+=`<div class="gs-item" role="option" tabindex="0" onclick="selectInit(${d.id})" onkeydown="if(event.key==='Enter')selectInit(${d.id})">
+          <div class="gs-icon">${abbr}</div>
+          <div class="gs-item-name">${d.name}</div>
+          <div class="gs-item-meta">${d.domain}&nbsp;·&nbsp;${d.year}</div>
+        </div>`;
+      });
+    }
+    if(finSlice.length){
+      html+='<div class="gs-group-label">Finance</div>';
+      finSlice.forEach(({d,i})=>{
+        html+=`<div class="gs-item" role="option" tabindex="0" onclick="selectFin(${i})" onkeydown="if(event.key==='Enter')selectFin(${i})">
+          <div class="gs-icon">$</div>
+          <div class="gs-item-name">${d.name}</div>
+          <div class="gs-item-meta">${d.amt?'USD '+d.amt+'M':''}</div>
+        </div>`;
+      });
+    }
+    box.innerHTML=html;
+  }
+  function selectInit(id){
+    closeSearch();go(0);
+    setTimeout(()=>{const ini=DATA.find(x=>x.id===id);if(ini)openModal(ini);},320);
+  }
+  function selectFin(idx){
+    closeSearch();go(2);
+    setTimeout(()=>openFin(idx),320);
+  }
+  function gsKeydown(e){if(e.key==='Escape')closeSearch();}
+  // Close on outside click
+  document.addEventListener('click',function(e){
+    const panel=document.getElementById('search-panel');
+    const btn=document.getElementById('search-btn');
+    if(panel.classList.contains('open')&&!panel.contains(e.target)&&!btn.contains(e.target))closeSearch();
+  });
+  // Expose globals
+  window.toggleSearch=toggleSearch;
+  window.closeSearch=closeSearch;
+  window.runSearch=runSearch;
+  window.gsKeydown=gsKeydown;
+})();
 
 </script>
 <script data-goatcounter="https://quadmonitor.goatcounter.com/count"
